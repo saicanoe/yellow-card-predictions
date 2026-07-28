@@ -1,0 +1,57 @@
+# CardCast lineup importer raw format
+#
+# Paste one or more matches using this shape:
+#
+# MATCH: Brentford vs West Ham
+# DATE: 2026-05-04
+# TEAM: Brentford
+# Nathan Collins, CB
+# Christian Norgaard, DM
+# TEAM: West Ham
+# Tomas Soucek, CM
+# Edson Alvarez, DM
+#
+# Notes:
+# - Blank lines and lines beginning with # are ignored.
+# - Starter defaults to TRUE for every player.
+# - Player rows should be written as: Player Name, Position
+
+MATCH: Brentford vs West Ham
+DATE: 2026-05-02
+TEAM: Brentford
+Nathan Collins, CB
+Christian Norgaard, DM
+Vitaly Janelt, CM
+Mads Roerslev, FB
+TEAM: West Ham
+Tomas Soucek, DM
+Edson Alvarez, DM
+Max Kilman, CB
+Aaron Wan-Bissaka, FB
+
+MATCH: Newcastle vs Brighton
+DATE: 2026-05-02
+TEAM: Newcastle
+Bruno Guimaraes, CM
+Sandro Tonali, DM
+Joelinton, CM
+Dan Burn, CB
+Lewis Hall, FB
+TEAM: Brighton
+Carlos Baleba, DM
+Jan Paul van Hecke, CB
+Pervis Estupinan, FB
+Adam Wharton, CM
+
+MATCH: Wolves vs Sunderland
+DATE: 2026-05-02
+TEAM: Wolves
+Andre, DM
+Joao Gomes, CM
+Mosquera, CB
+Rayan Ait-Nouri, FB
+TEAM: Sunderland
+Luke O'Nien, CB
+Dan Neil, CM
+Trai Hume, FB
+Chris Rigg, CM

@@ -1,0 +1,26 @@
+Player,Team,Position,YellowCards,Appearances,Minutes,CardRatePer90,RiskTier
+Bruno Guimaraes,Newcastle,CM,7,30,2450,0.26,HIGH
+Sandro Tonali,Newcastle,DM,6,28,2200,0.25,HIGH
+Joelinton,Newcastle,CM,5,24,1850,0.24,MEDIUM
+Dan Burn,Newcastle,CB,4,29,2500,0.14,MEDIUM
+Lewis Hall,Newcastle,FB,4,26,2050,0.18,MEDIUM
+Carlos Baleba,Brighton,DM,7,29,2150,0.29,HIGH
+Jan Paul van Hecke,Brighton,CB,5,30,2550,0.18,MEDIUM
+Pervis Estupinan,Brighton,FB,4,24,1900,0.19,MEDIUM
+Adam Wharton,Brighton,CM,3,25,1850,0.15,LOW
+Tomas Soucek,West Ham,DM,8,31,2600,0.28,HIGH
+Edson Alvarez,West Ham,DM,7,27,2150,0.29,HIGH
+Max Kilman,West Ham,CB,5,32,2800,0.16,MEDIUM
+Aaron Wan-Bissaka,West Ham,FB,4,29,2400,0.15,MEDIUM
+Nathan Collins,Brentford,CB,6,31,2700,0.20,HIGH
+Christian Norgaard,Brentford,DM,7,28,2250,0.28,HIGH
+Vitaly Janelt,Brentford,CM,5,27,2050,0.22,MEDIUM
+Mads Roerslev,Brentford,FB,4,24,1800,0.20,MEDIUM
+Andre,Wolves,DM,6,28,2200,0.25,HIGH
+Joao Gomes,Wolves,CM,8,30,2450,0.29,HIGH
+Mosquera,Wolves,CB,5,24,1900,0.24,HIGH
+Rayan Ait-Nouri,Wolves,FB,5,29,2300,0.20,MEDIUM
+Luke O'Nien,Sunderland,CB,7,32,2750,0.23,HIGH
+Dan Neil,Sunderland,CM,6,30,2500,0.22,MEDIUM
+Trai Hume,Sunderland,FB,6,31,2650,0.20,MEDIUM
+Chris Rigg,Sunderland,CM,4,26,1800,0.20,MEDIUM
