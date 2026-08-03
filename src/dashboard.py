@@ -2,6 +2,11 @@ import pandas as pd
 import streamlit as st
 from datetime import date
 
+from live_predictor import (
+    LivePredictionError,
+    generate_live_prediction,
+)
+
 from api_football import (
     APIFootballError,
     get_fixture_label,
@@ -18,6 +23,21 @@ from bet_tracker import (
     save_tracking_edits,
 )
 from player_risk import OUTPUT_PATH as PLAYER_RISK_PATH
+
+TEST_LIVE_FIXTURE = {
+    "fixture_id": -1,
+    "date": "2026-08-03T15:00:00-04:00",
+    "status": "NS",
+    "referee": "J Brooks",
+    "league_id": 39,
+    "league": "Premier League",
+    "country": "England",
+    "season": 2026,
+    "home_team_id": 42,
+    "home_team": "Arsenal",
+    "away_team_id": 49,
+    "away_team": "Chelsea",
+}
 
 st.set_page_config(
     page_title="Yellow Card Predictions",
@@ -465,17 +485,30 @@ def render_live_match_builder():
         "referee information, and confirmed lineups automatically."
     )
 
-    selected_date = st.date_input(
-        "Fixture date",
-        value=date.today(),
-        key="live_fixture_date",
+    use_test_fixture = st.checkbox(
+        "Use test fixture",
+        key="use_test_live_fixture",
+        help="Development only: use a local Arsenal vs Chelsea fixture without calling API-Football.",
     )
 
-    try:
-        fixtures = load_live_fixtures(selected_date)
-    except APIFootballError as error:
-        st.error(f"Could not load fixtures: {error}")
-        return
+    if use_test_fixture:
+        st.warning(
+            "TEST DATA: Arsenal vs Chelsea is loaded locally. "
+            "No fixture or lineup API requests will be made."
+        )
+        fixtures = [TEST_LIVE_FIXTURE.copy()]
+    else:
+        selected_date = st.date_input(
+            "Fixture date",
+            value=date.today(),
+            key="live_fixture_date",
+        )
+
+        try:
+            fixtures = load_live_fixtures(selected_date)
+        except APIFootballError as error:
+            st.error(f"Could not load fixtures: {error}")
+            return
 
     if not fixtures:
         st.info("No fixtures were found for this date.")
@@ -525,11 +558,19 @@ def render_live_match_builder():
         st.warning("This fixture does not have a valid API fixture ID.")
         return
 
-    try:
-        fixture_data = load_live_fixture_details(fixture_id)
-    except APIFootballError as error:
-        st.error(f"Could not load fixture details: {error}")
-        return
+    if use_test_fixture:
+        fixture_data = {
+            "fixture": selected_fixture,
+            "referee": selected_fixture.get("referee"),
+            "lineups": [],
+            "lineups_available": False,
+        }
+    else:
+        try:
+            fixture_data = load_live_fixture_details(fixture_id)
+        except APIFootballError as error:
+            st.error(f"Could not load fixture details: {error}")
+            return
 
     fixture = fixture_data.get("fixture", {})
     referee = fixture_data.get("referee")
@@ -573,6 +614,64 @@ def render_live_match_builder():
         """,
         unsafe_allow_html=True,
     )
+
+    if st.button(
+        "Generate Match Prediction",
+        type="primary",
+        key=f"generate_live_prediction_{fixture_id}",
+    ):
+        with st.spinner("Training models and generating prediction..."):
+            try:
+                prediction = generate_live_prediction(fixture)
+            except LivePredictionError as error:
+                st.error(f"Could not generate prediction: {error}")
+            else:
+                st.session_state["live_prediction"] = prediction
+
+    prediction = st.session_state.get("live_prediction")
+    if prediction and prediction.get("fixture_id") == fixture_id:
+        st.markdown("### Match Prediction")
+
+        p1, p2, p3 = st.columns(3)
+        p1.metric(
+            "Predicted Total Cards",
+            fmt_num(prediction["predicted_cards"]),
+        )
+        p2.metric(
+            "Over 4.5 Probability",
+            fmt_pct(prediction["over_4_5_probability"]),
+        )
+        p3.metric(
+            "Under 4.5 Probability",
+            fmt_pct(prediction["under_4_5_probability"]),
+        )
+
+        profile_found = prediction["referee_profile_found"]
+        profile_badge = (
+            badge("REFEREE PROFILE FOUND", "good")
+            if profile_found
+            else badge("LEAGUE AVERAGE PROFILE", "warn")
+        )
+        referee_name = (
+            prediction.get("referee_model")
+            or "No referee assigned"
+        )
+
+        st.markdown(
+            f"""
+            <div class="match-card">
+                <div class="small-label">Prediction Inputs</div>
+                <div style="margin: 10px 0 16px;">{profile_badge}</div>
+                <div class="reason-box">
+                    <b>Referee profile status:</b> {referee_name}<br>
+                    <b>Historical team mapping:</b><br>
+                    {prediction["home_team_api"]} &rarr; {prediction["home_team_model"]}<br>
+                    {prediction["away_team_api"]} &rarr; {prediction["away_team_model"]}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     if not lineups_available or not lineup_rows:
         st.info(
