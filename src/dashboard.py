@@ -22,7 +22,10 @@ from bet_tracker import (
     initialize_bet_tracking,
     save_tracking_edits,
 )
-from player_risk import OUTPUT_PATH as PLAYER_RISK_PATH
+from player_risk import (
+    OUTPUT_PATH as PLAYER_RISK_PATH,
+    generate_live_player_card_risks,
+)
 
 TEST_LIVE_FIXTURE = {
     "fixture_id": -1,
@@ -38,6 +41,31 @@ TEST_LIVE_FIXTURE = {
     "away_team_id": 49,
     "away_team": "Chelsea",
 }
+
+TEST_LIVE_LINEUPS = [
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "David Raya", "number": 1, "position": "G", "grid": "1:1"},
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Jurrien Timber", "number": 12, "position": "D", "grid": "2:1"},
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "William Saliba", "number": 2, "position": "D", "grid": "2:2"},
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Gabriel Magalhaes", "number": 6, "position": "D", "grid": "2:3"},
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Myles Lewis-Skelly", "number": 49, "position": "D", "grid": "2:4"},
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Declan Rice", "number": 41, "position": "M", "grid": "3:1"},
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Martin Odegaard", "number": 8, "position": "M", "grid": "3:2"},
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Mikel Merino", "number": 23, "position": "M", "grid": "3:3"},
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Bukayo Saka", "number": 7, "position": "F", "grid": "4:1"},
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Kai Havertz", "number": 29, "position": "F", "grid": "4:2"},
+    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Gabriel Martinelli", "number": 11, "position": "F", "grid": "4:3"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Robert Sanchez", "number": 1, "position": "G", "grid": "1:1"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Malo Gusto", "number": 27, "position": "D", "grid": "2:1"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Wesley Fofana", "number": 29, "position": "D", "grid": "2:2"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Levi Colwill", "number": 6, "position": "D", "grid": "2:3"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Marc Cucurella", "number": 3, "position": "D", "grid": "2:4"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Moisés Caicedo", "number": 25, "position": "M", "grid": "3:1"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Enzo Fernandez", "number": 8, "position": "M", "grid": "3:2"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Pedro Neto", "number": 7, "position": "M", "grid": "4:1"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Cole Palmer", "number": 20, "position": "M", "grid": "4:2"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Jadon Sancho", "number": 19, "position": "M", "grid": "4:3"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Nicolas Jackson", "number": 15, "position": "F", "grid": "5:1"},
+]
 
 st.set_page_config(
     page_title="Yellow Card Predictions",
@@ -562,8 +590,8 @@ def render_live_match_builder():
         fixture_data = {
             "fixture": selected_fixture,
             "referee": selected_fixture.get("referee"),
-            "lineups": [],
-            "lineups_available": False,
+            "lineups": TEST_LIVE_LINEUPS,
+            "lineups_available": True,
         }
     else:
         try:
@@ -744,6 +772,55 @@ def render_live_match_builder():
                 away_substitutes[
                     ["number", "player", "position"]
                 ],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    st.markdown("### Live Player Card Risk")
+    if not prediction or prediction.get("fixture_id") != fixture_id:
+        st.info(
+            "Generate the match prediction to score confirmed starters."
+        )
+        return
+
+    live_risks = generate_live_player_card_risks(
+        fixture,
+        lineup_rows,
+        prediction,
+    )
+    matched_risks = live_risks[live_risks["ProfileMatched"]].copy()
+    unmatched_risks = live_risks[~live_risks["ProfileMatched"]].copy()
+
+    if matched_risks.empty:
+        st.warning(
+            "No confirmed starters matched data/player_profiles.csv. "
+            "No player risk scores are available for this fixture."
+        )
+    else:
+        st.markdown("#### Top Five Matched Starters")
+        st.dataframe(
+            matched_risks.head(5),
+            use_container_width=True,
+            hide_index=True,
+        )
+        if len(matched_risks) > 5:
+            with st.expander("Other matched starters"):
+                st.dataframe(
+                    matched_risks.iloc[5:],
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+    if not unmatched_risks.empty:
+        with st.expander(
+            f"Unmatched starters ({len(unmatched_risks)})"
+        ):
+            st.caption(
+                "These players were not assigned a risk score because no "
+                "matching player-and-team profile was found."
+            )
+            st.dataframe(
+                unmatched_risks,
                 use_container_width=True,
                 hide_index=True,
             )

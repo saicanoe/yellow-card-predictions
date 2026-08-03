@@ -245,6 +245,15 @@ def generate_live_prediction(fixture: dict) -> dict:
     over_probability = float(
         predicted_fixture["over_4_5_prob"]
     )
+    referee_matches = pd.to_numeric(
+        predicted_fixture.get("matches"), errors="coerce"
+    )
+    if not referee_profile_found:
+        confidence = "LOW CONFIDENCE (no ref data)"
+    elif pd.notna(referee_matches) and referee_matches >= 10:
+        confidence = "HIGH CONFIDENCE"
+    else:
+        confidence = "CAUTION (low sample ref)"
 
     return {
         "fixture_id": fixture.get("fixture_id"),
@@ -257,6 +266,7 @@ def generate_live_prediction(fixture: dict) -> dict:
         "referee_api": strip_referee_country(referee_api),
         "referee_model": referee_model,
         "referee_profile_found": referee_profile_found,
+        "confidence": confidence,
         "predicted_cards": float(
             predicted_fixture["predicted_cards"]
         ),

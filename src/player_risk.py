@@ -1,6 +1,10 @@
 from pathlib import Path
+import re
+import unicodedata
 
 import pandas as pd
+
+from data_loader import normalize_team_name
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = PROJECT_ROOT / "data"
@@ -18,6 +22,15 @@ OUTPUT_COLUMNS = [
     "Position",
     "RiskScore",
     "RiskTier",
+]
+
+LIVE_OUTPUT_COLUMNS = [
+    "Player",
+    "Team",
+    "Position",
+    "RiskScore",
+    "RiskTier",
+    "ProfileMatched",
 ]
 
 POSITION_BOOSTS = {
@@ -107,6 +120,105 @@ def _card_total_boost(row: pd.Series) -> float:
     if card_total >= 3.8:
         return 0.03
     return 0.0
+
+
+def _normalized_name(value) -> str:
+    """Return an accent- and punctuation-insensitive lookup key."""
+    if pd.isna(value):
+        return ""
+
+    text = unicodedata.normalize("NFKD", str(value))
+    text = "".join(
+        character for character in text if not unicodedata.combining(character)
+    )
+    text = text.casefold().replace("&", "and")
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return " ".join(text.split())
+
+
+def _normalized_team(value) -> str:
+    """Normalize known team aliases before creating a lookup key."""
+    return _normalized_name(normalize_team_name(value))
+
+
+def generate_live_player_card_risks(
+    fixture: dict,
+    lineup_rows: list[dict],
+    live_prediction: dict,
+) -> pd.DataFrame:
+    """Score confirmed API starters against manually maintained profiles."""
+    del fixture  # Reserved for later fixture-specific player features.
+
+    if not lineup_rows:
+        return pd.DataFrame(columns=LIVE_OUTPUT_COLUMNS)
+
+    lineups = pd.DataFrame(lineup_rows)
+    required_columns = {"player", "team", "position", "lineup_type"}
+    if not required_columns.issubset(lineups.columns):
+        return pd.DataFrame(columns=LIVE_OUTPUT_COLUMNS)
+
+    starters = lineups[
+        lineups["lineup_type"].fillna("").astype(str).str.strip().str.casefold()
+        == "starter"
+    ].copy()
+    if starters.empty:
+        return pd.DataFrame(columns=LIVE_OUTPUT_COLUMNS)
+
+    starters = starters.rename(
+        columns={"player": "Player", "team": "Team", "position": "Position_lineup"}
+    )
+    starters["_player_key"] = starters["Player"].map(_normalized_name)
+    starters["_team_key"] = starters["Team"].map(_normalized_team)
+
+    profiles = _clean_text_columns(
+        load_player_profiles(), ["Player", "Team", "Position"]
+    )
+    profiles["_player_key"] = profiles["Player"].map(_normalized_name)
+    profiles["_team_key"] = profiles["Team"].map(_normalized_team)
+    profiles = profiles.drop_duplicates(["_player_key", "_team_key"], keep="first")
+    profiles = profiles.rename(
+        columns={
+            "Player": "Player_profile",
+            "Team": "Team_profile",
+            "Position": "Position_profile",
+            "RiskTier": "RiskTier_profile",
+        }
+    )
+
+    players = starters.merge(
+        profiles,
+        on=["_player_key", "_team_key"],
+        how="left",
+        indicator=True,
+    )
+    players["ProfileMatched"] = players["_merge"].eq("both")
+    players["Position"] = players["Position_profile"].fillna(
+        players["Position_lineup"]
+    )
+    players["confidence"] = live_prediction.get("confidence")
+    players["predicted_cards"] = live_prediction.get("predicted_cards")
+    players["adjusted_cards"] = live_prediction.get(
+        "adjusted_cards", live_prediction.get("predicted_cards")
+    )
+    players["RiskScore"] = pd.NA
+    players["RiskTier"] = "UNMATCHED"
+
+    matched = players["ProfileMatched"]
+    players.loc[matched, "RiskScore"] = (
+        _base_card_rate(players.loc[matched])
+        + players.loc[matched, "Position"].apply(_position_boost)
+        + players.loc[matched, "confidence"].apply(_match_confidence_boost)
+        + players.loc[matched].apply(_card_total_boost, axis=1)
+    ).round(3)
+    players.loc[matched, "RiskTier"] = players.loc[matched, "RiskTier_profile"]
+
+    players["RiskScore"] = pd.to_numeric(players["RiskScore"], errors="coerce")
+    players = players.sort_values(
+        ["ProfileMatched", "RiskScore", "Player"],
+        ascending=[False, False, True],
+        na_position="last",
+    )
+    return players[LIVE_OUTPUT_COLUMNS].reset_index(drop=True)
 
 
 def generate_player_card_risks() -> pd.DataFrame:
