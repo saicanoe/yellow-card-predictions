@@ -2,6 +2,13 @@ import pandas as pd
 import streamlit as st
 from datetime import date
 
+from api_football import (
+    APIFootballError,
+    get_fixture_label,
+    get_fixture_lineup_data,
+    get_normalized_fixtures_by_date,
+)
+
 from bet_tracker import (
     TRACKING_COLUMNS,
     calculate_summary,
@@ -438,6 +445,210 @@ def render_player_card_risk():
         st.dataframe(match_risks[display_columns], use_container_width=True)
 
 
+
+@st.cache_data(ttl=300)
+def load_live_fixtures(selected_date):
+    """Load and cache API fixtures for five minutes."""
+    return get_normalized_fixtures_by_date(selected_date)
+
+
+@st.cache_data(ttl=300)
+def load_live_fixture_details(fixture_id):
+    """Load and cache referee and lineup data for five minutes."""
+    return get_fixture_lineup_data(fixture_id)
+
+
+def render_live_match_builder():
+    st.subheader("Live Match Builder")
+    st.caption(
+        "Select a date, league, and fixture to retrieve match details, "
+        "referee information, and confirmed lineups automatically."
+    )
+
+    selected_date = st.date_input(
+        "Fixture date",
+        value=date.today(),
+        key="live_fixture_date",
+    )
+
+    try:
+        fixtures = load_live_fixtures(selected_date)
+    except APIFootballError as error:
+        st.error(f"Could not load fixtures: {error}")
+        return
+
+    if not fixtures:
+        st.info("No fixtures were found for this date.")
+        return
+
+    leagues = sorted(
+        {
+            fixture.get("league")
+            for fixture in fixtures
+            if fixture.get("league")
+        }
+    )
+
+    selected_league = st.selectbox(
+        "League",
+        options=["All leagues"] + leagues,
+        key="live_fixture_league",
+    )
+
+    filtered_fixtures = fixtures
+    if selected_league != "All leagues":
+        filtered_fixtures = [
+            fixture
+            for fixture in fixtures
+            if fixture.get("league") == selected_league
+        ]
+
+    if not filtered_fixtures:
+        st.info("No fixtures are available for the selected league.")
+        return
+
+    fixture_options = {
+        get_fixture_label(fixture): fixture
+        for fixture in filtered_fixtures
+    }
+
+    selected_fixture_label = st.selectbox(
+        "Fixture",
+        options=list(fixture_options.keys()),
+        key="live_fixture_selection",
+    )
+
+    selected_fixture = fixture_options[selected_fixture_label]
+    fixture_id = selected_fixture.get("fixture_id")
+
+    if not fixture_id:
+        st.warning("This fixture does not have a valid API fixture ID.")
+        return
+
+    try:
+        fixture_data = load_live_fixture_details(fixture_id)
+    except APIFootballError as error:
+        st.error(f"Could not load fixture details: {error}")
+        return
+
+    fixture = fixture_data.get("fixture", {})
+    referee = fixture_data.get("referee")
+    lineup_rows = fixture_data.get("lineups", [])
+    lineups_available = fixture_data.get("lineups_available", False)
+
+    st.markdown("### Match Details")
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Home Team", fixture.get("home_team") or "Unknown")
+    c2.metric("Away Team", fixture.get("away_team") or "Unknown")
+    c3.metric("League", fixture.get("league") or "Unknown")
+    c4.metric("Status", fixture.get("status") or "Unknown")
+
+    referee_badge = (
+        badge("REFEREE LOADED", "good")
+        if referee
+        else badge("NO REFEREE YET", "warn")
+    )
+    lineup_badge = (
+        badge("LINEUPS CONFIRMED", "good")
+        if lineups_available
+        else badge("LINEUPS NOT RELEASED", "warn")
+    )
+
+    st.markdown(
+        f"""
+        <div class="match-card">
+            <div class="small-label">Selected Fixture</div>
+            <h3>{fixture.get("home_team", "Unknown")} vs {fixture.get("away_team", "Unknown")}</h3>
+            <div style="margin-top: 12px;">
+                {referee_badge}
+                {lineup_badge}
+            </div>
+            <div style="margin-top: 16px;">
+                <b>Referee:</b> {referee or "Not assigned or not yet available"}<br>
+                <b>Kickoff:</b> {fixture.get("date") or "Unknown"}<br>
+                <b>Country:</b> {fixture.get("country") or "Unknown"}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if not lineups_available or not lineup_rows:
+        st.info(
+            "Confirmed lineups are not available yet. "
+            "They are usually released shortly before kickoff."
+        )
+        return
+
+    lineup_dataframe = pd.DataFrame(lineup_rows)
+    starters = lineup_dataframe[
+        lineup_dataframe["lineup_type"] == "Starter"
+    ].copy()
+    substitutes = lineup_dataframe[
+        lineup_dataframe["lineup_type"] == "Substitute"
+    ].copy()
+
+    st.markdown("### Confirmed Lineups")
+
+    home_team = fixture.get("home_team")
+    away_team = fixture.get("away_team")
+    home_column, away_column = st.columns(2)
+
+    with home_column:
+        st.markdown(f"#### {home_team}")
+        home_starters = starters[starters["team"] == home_team]
+        if home_starters.empty:
+            st.info("No starters available.")
+        else:
+            st.dataframe(
+                home_starters[
+                    ["number", "player", "position", "formation", "grid"]
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+        st.markdown("##### Substitutes")
+        home_substitutes = substitutes[substitutes["team"] == home_team]
+        if home_substitutes.empty:
+            st.info("No substitutes available.")
+        else:
+            st.dataframe(
+                home_substitutes[
+                    ["number", "player", "position"]
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    with away_column:
+        st.markdown(f"#### {away_team}")
+        away_starters = starters[starters["team"] == away_team]
+        if away_starters.empty:
+            st.info("No starters available.")
+        else:
+            st.dataframe(
+                away_starters[
+                    ["number", "player", "position", "formation", "grid"]
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+        st.markdown("##### Substitutes")
+        away_substitutes = substitutes[substitutes["team"] == away_team]
+        if away_substitutes.empty:
+            st.info("No substitutes available.")
+        else:
+            st.dataframe(
+                away_substitutes[
+                    ["number", "player", "position"]
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+
 predictions, top_bets, ultra_top_bets = load_data()
 
 st.markdown(
@@ -475,7 +686,7 @@ s2.metric("Manual Odds Fixtures", manual_odds_count)
 s3.metric("Default Odds Fixtures", default_odds_count)
 s4.metric("Referee-Supported Fixtures", referee_supported_count)
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
     [
         "Top Bets",
         "Ultra Value",
@@ -484,6 +695,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
         "All Predictions",
         "Bet Tracker",
         "Player Card Risk",
+        "Live Match Builder",
     ]
 )
 
@@ -526,3 +738,6 @@ with tab6:
 
 with tab7:
     render_player_card_risk()
+
+with tab8:
+    render_live_match_builder()
