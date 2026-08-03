@@ -1,8 +1,14 @@
 """API-Football player season-statistics retrieval and normalization."""
 
+import json
+from pathlib import Path
 from typing import Any
 
 from api_football import APIFootballError, _get
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PLAYER_STATS_CACHE_PATH = PROJECT_ROOT / "data" / "player_stats_cache.json"
 
 
 class PlayerStatsAPIError(APIFootballError):
@@ -24,6 +30,56 @@ PLAYER_STAT_COLUMNS = [
     "fouls_committed",
     "card_rate_per_90",
 ]
+
+
+def player_stats_cache_key(player_id: int, season: int, league_id: int) -> str:
+    """Build the stable player/season/league cache key."""
+    return f"{int(player_id)}:{int(season)}:{int(league_id)}"
+
+
+def load_player_stats_cache(
+    cache_path: Path = PLAYER_STATS_CACHE_PATH,
+) -> dict[str, list[dict]]:
+    """Load normalized player statistics from the local JSON cache."""
+    if not cache_path.exists():
+        return {}
+
+    try:
+        payload = json.loads(cache_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise PlayerStatsAPIError(
+            f"Could not read player statistics cache {cache_path}: {error}"
+        ) from error
+
+    if not isinstance(payload, dict):
+        raise PlayerStatsAPIError(
+            f"Player statistics cache {cache_path} must contain a JSON object."
+        )
+
+    return {
+        str(key): rows
+        for key, rows in payload.items()
+        if isinstance(rows, list)
+    }
+
+
+def save_player_stats_cache(
+    cache: dict[str, list[dict]],
+    cache_path: Path = PLAYER_STATS_CACHE_PATH,
+) -> None:
+    """Persist normalized player statistics to the local JSON cache."""
+    try:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path = cache_path.with_suffix(f"{cache_path.suffix}.tmp")
+        temporary_path.write_text(
+            json.dumps(cache, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        temporary_path.replace(cache_path)
+    except (OSError, TypeError, ValueError) as error:
+        raise PlayerStatsAPIError(
+            f"Could not write player statistics cache {cache_path}: {error}"
+        ) from error
 
 
 def _safe_int(value: Any) -> int:

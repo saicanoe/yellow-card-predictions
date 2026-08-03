@@ -26,6 +26,7 @@ from player_risk import (
     OUTPUT_PATH as PLAYER_RISK_PATH,
     generate_live_player_card_risks,
 )
+from player_stats_api import PlayerStatsAPIError
 
 TEST_LIVE_FIXTURE = {
     "fixture_id": -1,
@@ -43,14 +44,14 @@ TEST_LIVE_FIXTURE = {
 }
 
 TEST_LIVE_LINEUPS = [
-    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "David Raya", "number": 1, "position": "G", "grid": "1:1"},
+    {"team_id": 42, "team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player_id": 900001, "player": "David Raya", "number": 1, "position": "G", "grid": "1:1"},
     {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Jurrien Timber", "number": 12, "position": "D", "grid": "2:1"},
     {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "William Saliba", "number": 2, "position": "D", "grid": "2:2"},
-    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Gabriel Magalhaes", "number": 6, "position": "D", "grid": "2:3"},
-    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Myles Lewis-Skelly", "number": 49, "position": "D", "grid": "2:4"},
+    {"team_id": 42, "team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player_id": 900002, "player": "Gabriel Magalhaes", "number": 6, "position": "D", "grid": "2:3"},
+    {"team_id": 42, "team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player_id": 900003, "player": "Myles Lewis-Skelly", "number": 49, "position": "D", "grid": "2:4"},
     {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Declan Rice", "number": 41, "position": "M", "grid": "3:1"},
-    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Martin Odegaard", "number": 8, "position": "M", "grid": "3:2"},
-    {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Mikel Merino", "number": 23, "position": "M", "grid": "3:3"},
+    {"team_id": 42, "team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player_id": 900004, "player": "Martin Odegaard", "number": 8, "position": "M", "grid": "3:2"},
+    {"team_id": 42, "team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player_id": 900005, "player": "Mikel Merino", "number": 23, "position": "M", "grid": "3:3"},
     {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Bukayo Saka", "number": 7, "position": "F", "grid": "4:1"},
     {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Kai Havertz", "number": 29, "position": "F", "grid": "4:2"},
     {"team": "Arsenal", "formation": "4-3-3", "lineup_type": "Starter", "player": "Gabriel Martinelli", "number": 11, "position": "F", "grid": "4:3"},
@@ -783,11 +784,41 @@ def render_live_match_builder():
         )
         return
 
-    live_risks = generate_live_player_card_risks(
-        fixture,
-        lineup_rows,
-        prediction,
+    st.caption(
+        "CSV profiles are used first. Fetching is manual and limited to "
+        "5 unmatched starters per action."
     )
+    fetch_missing_profiles = st.button(
+        "Fetch Missing Player Profiles",
+        key=f"fetch_missing_player_profiles_{fixture_id}",
+    )
+
+    try:
+        live_risks = generate_live_player_card_risks(
+            fixture,
+            lineup_rows,
+            prediction,
+            fetch_missing=fetch_missing_profiles,
+            max_api_fetches=5,
+        )
+    except PlayerStatsAPIError as error:
+        st.error(f"Could not load player profile cache: {error}")
+        return
+
+    counts = live_risks.attrs.get("profile_counts", {})
+    source_columns = st.columns(4)
+    source_columns[0].metric("CSV Profiles", counts.get("csv", 0))
+    source_columns[1].metric("Cached API Profiles", counts.get("cache", 0))
+    source_columns[2].metric("Live API Profiles", counts.get("live_api", 0))
+    source_columns[3].metric("Unmatched", counts.get("unmatched", 0))
+
+    if fetch_missing_profiles:
+        st.caption(
+            f"API profile requests used this action: "
+            f"{live_risks.attrs.get('api_fetches', 0)} / 5"
+        )
+        for fetch_error in live_risks.attrs.get("fetch_errors", []):
+            st.warning(fetch_error)
     matched_risks = live_risks[live_risks["ProfileMatched"]].copy()
     unmatched_risks = live_risks[~live_risks["ProfileMatched"]].copy()
 

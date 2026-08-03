@@ -5,6 +5,14 @@ import unicodedata
 import pandas as pd
 
 from data_loader import normalize_team_name
+from player_stats_api import (
+    PLAYER_STATS_CACHE_PATH,
+    PlayerStatsAPIError,
+    fetch_player_season_statistics,
+    load_player_stats_cache,
+    player_stats_cache_key,
+    save_player_stats_cache,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = PROJECT_ROOT / "data"
@@ -31,6 +39,7 @@ LIVE_OUTPUT_COLUMNS = [
     "RiskScore",
     "RiskTier",
     "ProfileMatched",
+    "ProfileSource",
 ]
 
 POSITION_BOOSTS = {
@@ -141,13 +150,79 @@ def _normalized_team(value) -> str:
     return _normalized_name(normalize_team_name(value))
 
 
+def _select_api_profile(rows: list[dict], starter: pd.Series) -> dict | None:
+    """Select a usable team statistics row for one lineup player."""
+    if not rows:
+        return None
+
+    team_id = starter.get("team_id")
+    team_key = _normalized_team(starter.get("Team"))
+    candidates = [row for row in rows if isinstance(row, dict)]
+
+    if pd.notna(team_id):
+        team_matches = [
+            row for row in candidates if str(row.get("team_id")) == str(team_id)
+        ]
+        if team_matches:
+            candidates = team_matches
+        elif team_key:
+            candidates = [
+                row
+                for row in candidates
+                if _normalized_team(row.get("team_name")) == team_key
+            ]
+        else:
+            candidates = []
+    elif team_key:
+        team_matches = [
+            row
+            for row in candidates
+            if _normalized_team(row.get("team_name")) == team_key
+        ]
+        if team_matches:
+            candidates = team_matches
+
+    for row in candidates:
+        minutes = pd.to_numeric(row.get("minutes"), errors="coerce")
+        card_rate = pd.to_numeric(row.get("card_rate_per_90"), errors="coerce")
+        if pd.notna(minutes) and minutes > 0 and pd.notna(card_rate):
+            return row
+
+    return None
+
+
+def _positive_int(value) -> int | None:
+    """Coerce API identifiers while rejecting missing and non-positive values."""
+    if isinstance(value, bool) or pd.isna(value):
+        return None
+    try:
+        result = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return result if result > 0 else None
+
+
+def _risk_tier_from_score(score) -> str:
+    """Assign a display tier to API-derived scores."""
+    if pd.isna(score):
+        return "UNMATCHED"
+    if score >= 0.40:
+        return "HIGH"
+    if score >= 0.20:
+        return "MEDIUM"
+    return "LOW"
+
+
 def generate_live_player_card_risks(
     fixture: dict,
     lineup_rows: list[dict],
     live_prediction: dict,
+    fetch_missing: bool = False,
+    max_api_fetches: int = 5,
+    cache_path: Path = PLAYER_STATS_CACHE_PATH,
+    profile_fetcher=None,
 ) -> pd.DataFrame:
-    """Score confirmed API starters against manually maintained profiles."""
-    del fixture  # Reserved for later fixture-specific player features.
+    """Score starters from CSV first, then cache/API when explicitly requested."""
 
     if not lineup_rows:
         return pd.DataFrame(columns=LIVE_OUTPUT_COLUMNS)
@@ -192,6 +267,8 @@ def generate_live_player_card_risks(
         indicator=True,
     )
     players["ProfileMatched"] = players["_merge"].eq("both")
+    players["ProfileSource"] = "Unmatched / not fetched"
+    players.loc[players["ProfileMatched"], "ProfileSource"] = "CSV profile"
     players["Position"] = players["Position_profile"].fillna(
         players["Position_lineup"]
     )
@@ -203,6 +280,56 @@ def generate_live_player_card_risks(
     players["RiskScore"] = pd.NA
     players["RiskTier"] = "UNMATCHED"
 
+    cache = load_player_stats_cache(cache_path)
+    cache_changed = False
+    api_fetches = 0
+    fetch_errors = []
+    fetch_limit = max(0, int(max_api_fetches))
+    fetcher = profile_fetcher or fetch_player_season_statistics
+    season = fixture.get("season")
+    league_id = fixture.get("league_id")
+
+    for index in players.index[~players["ProfileMatched"]]:
+        player_id = _positive_int(
+            players.at[index, "player_id"] if "player_id" in players else None
+        )
+        season_id = _positive_int(season)
+        league_identifier = _positive_int(league_id)
+        if None in (player_id, season_id, league_identifier):
+            continue
+
+        cache_key = player_stats_cache_key(player_id, season_id, league_identifier)
+        if cache_key in cache:
+            api_rows = cache[cache_key]
+            source = "API profile (cache)"
+        elif fetch_missing and api_fetches < fetch_limit:
+            api_fetches += 1
+            try:
+                api_rows = fetcher(player_id, season_id, league_identifier)
+            except (PlayerStatsAPIError, ValueError) as error:
+                fetch_errors.append(f"{players.at[index, 'Player']}: {error}")
+                continue
+            cache[cache_key] = api_rows
+            cache_changed = True
+            source = "API profile (live)"
+        else:
+            continue
+
+        api_profile = _select_api_profile(api_rows, players.loc[index])
+        if api_profile is None:
+            continue
+
+        players.at[index, "ProfileMatched"] = True
+        players.at[index, "ProfileSource"] = source
+        players.at[index, "CardRatePer90"] = api_profile["card_rate_per_90"]
+        players.at[index, "YellowCards"] = api_profile["yellow_cards"]
+        players.at[index, "Minutes"] = api_profile["minutes"]
+        if api_profile.get("position"):
+            players.at[index, "Position"] = api_profile["position"]
+
+    if cache_changed:
+        save_player_stats_cache(cache, cache_path)
+
     matched = players["ProfileMatched"]
     players.loc[matched, "RiskScore"] = (
         _base_card_rate(players.loc[matched])
@@ -210,7 +337,14 @@ def generate_live_player_card_risks(
         + players.loc[matched, "confidence"].apply(_match_confidence_boost)
         + players.loc[matched].apply(_card_total_boost, axis=1)
     ).round(3)
-    players.loc[matched, "RiskTier"] = players.loc[matched, "RiskTier_profile"]
+    csv_matched = players["ProfileSource"].eq("CSV profile")
+    players.loc[csv_matched, "RiskTier"] = players.loc[
+        csv_matched, "RiskTier_profile"
+    ]
+    api_matched = matched & ~csv_matched
+    players.loc[api_matched, "RiskTier"] = players.loc[
+        api_matched, "RiskScore"
+    ].apply(_risk_tier_from_score)
 
     players["RiskScore"] = pd.to_numeric(players["RiskScore"], errors="coerce")
     players = players.sort_values(
@@ -218,7 +352,16 @@ def generate_live_player_card_risks(
         ascending=[False, False, True],
         na_position="last",
     )
-    return players[LIVE_OUTPUT_COLUMNS].reset_index(drop=True)
+    output = players[LIVE_OUTPUT_COLUMNS].reset_index(drop=True)
+    output.attrs["profile_counts"] = {
+        "csv": int(output["ProfileSource"].eq("CSV profile").sum()),
+        "cache": int(output["ProfileSource"].eq("API profile (cache)").sum()),
+        "live_api": int(output["ProfileSource"].eq("API profile (live)").sum()),
+        "unmatched": int((~output["ProfileMatched"]).sum()),
+    }
+    output.attrs["api_fetches"] = api_fetches
+    output.attrs["fetch_errors"] = fetch_errors
+    return output
 
 
 def generate_player_card_risks() -> pd.DataFrame:

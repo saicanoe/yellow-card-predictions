@@ -1,0 +1,87 @@
+{
+  "900001:2026:39": [
+    {
+      "player_id": 900001,
+      "player_name": "David Raya",
+      "team_id": 42,
+      "team_name": "Arsenal",
+      "position": "G",
+      "appearances": 34,
+      "starts": 34,
+      "minutes": 3060,
+      "yellow_cards": 2,
+      "second_yellow_cards": 0,
+      "red_cards": 0,
+      "fouls_committed": 3,
+      "card_rate_per_90": 0.059
+    }
+  ],
+  "900002:2026:39": [
+    {
+      "player_id": 900002,
+      "player_name": "Gabriel Magalhaes",
+      "team_id": 42,
+      "team_name": "Arsenal",
+      "position": "CB",
+      "appearances": 31,
+      "starts": 30,
+      "minutes": 2700,
+      "yellow_cards": 5,
+      "second_yellow_cards": 0,
+      "red_cards": 0,
+      "fouls_committed": 28,
+      "card_rate_per_90": 0.167
+    }
+  ],
+  "900003:2026:39": [
+    {
+      "player_id": 900003,
+      "player_name": "Myles Lewis-Skelly",
+      "team_id": 42,
+      "team_name": "Arsenal",
+      "position": "FB",
+      "appearances": 25,
+      "starts": 20,
+      "minutes": 1800,
+      "yellow_cards": 6,
+      "second_yellow_cards": 1,
+      "red_cards": 0,
+      "fouls_committed": 24,
+      "card_rate_per_90": 0.3
+    }
+  ],
+  "900004:2026:39": [
+    {
+      "player_id": 900004,
+      "player_name": "Martin Odegaard",
+      "team_id": 42,
+      "team_name": "Arsenal",
+      "position": "CM",
+      "appearances": 30,
+      "starts": 28,
+      "minutes": 2440,
+      "yellow_cards": 3,
+      "second_yellow_cards": 0,
+      "red_cards": 0,
+      "fouls_committed": 18,
+      "card_rate_per_90": 0.111
+    }
+  ],
+  "900005:2026:39": [
+    {
+      "player_id": 900005,
+      "player_name": "Mikel Merino",
+      "team_id": 42,
+      "team_name": "Arsenal",
+      "position": "CM",
+      "appearances": 29,
+      "starts": 23,
+      "minutes": 2050,
+      "yellow_cards": 6,
+      "second_yellow_cards": 0,
+      "red_cards": 0,
+      "fouls_committed": 35,
+      "card_rate_per_90": 0.263
+    }
+  ]
+}
