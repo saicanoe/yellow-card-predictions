@@ -67,7 +67,7 @@ TEST_LIVE_LINEUPS = [
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Wesley Fofana", "number": 29, "position": "D", "grid": "2:2"},
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Levi Colwill", "number": 6, "position": "D", "grid": "2:3"},
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Marc Cucurella", "number": 3, "position": "D", "grid": "2:4"},
-    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Mois├⌐s Caicedo", "number": 25, "position": "M", "grid": "3:1"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Moisés Caicedo", "number": 25, "position": "M", "grid": "3:1"},
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Enzo Fernandez", "number": 8, "position": "M", "grid": "3:2"},
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Pedro Neto", "number": 7, "position": "M", "grid": "4:1"},
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Cole Palmer", "number": 20, "position": "M", "grid": "4:2"},
@@ -83,121 +83,322 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&display=swap');
+
+    :root {
+        --yc-bg: #020617;
+        --yc-bg-glow-a: rgba(14, 165, 233, 0.16);
+        --yc-bg-glow-b: rgba(51, 65, 85, 0.32);
+        --yc-surface: rgba(15, 23, 42, 0.94);
+        --yc-surface-soft: rgba(15, 23, 42, 0.72);
+        --yc-surface-deep: rgba(2, 6, 23, 0.72);
+        --yc-border: rgba(148, 163, 184, 0.16);
+        --yc-border-strong: rgba(148, 163, 184, 0.28);
+        --yc-text: #e2e8f0;
+        --yc-muted: #94a3b8;
+        --yc-heading: #f8fafc;
+        --yc-accent: #38bdf8;
+        --yc-accent-strong: #0ea5e9;
+        --yc-accent-deep: #0369a1;
+        --yc-good-bg: rgba(34, 197, 94, 0.14);
+        --yc-good-fg: #86efac;
+        --yc-good-bd: rgba(34, 197, 94, 0.35);
+        --yc-warn-bg: rgba(245, 158, 11, 0.14);
+        --yc-warn-fg: #fcd34d;
+        --yc-warn-bd: rgba(245, 158, 11, 0.35);
+        --yc-bad-bg: rgba(239, 68, 68, 0.14);
+        --yc-bad-fg: #fca5a5;
+        --yc-bad-bd: rgba(239, 68, 68, 0.35);
+        --yc-neutral-bg: rgba(56, 189, 248, 0.14);
+        --yc-neutral-fg: #7dd3fc;
+        --yc-neutral-bd: rgba(56, 189, 248, 0.35);
+        --yc-radius: 16px;
+        --yc-radius-sm: 12px;
+        --yc-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+        --yc-font: 'IBM Plex Sans', sans-serif;
+        --yc-font-display: 'IBM Plex Sans Condensed', 'IBM Plex Sans', sans-serif;
+        --yc-space-xs: 0.35rem;
+        --yc-space-sm: 0.75rem;
+        --yc-space-md: 1.25rem;
+        --yc-space-lg: 1.75rem;
+    }
 
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+        font-family: var(--yc-font);
     }
 
     .stApp {
         background:
-            radial-gradient(circle at top left, rgba(37, 99, 235, 0.20), transparent 35%),
-            radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 30%),
-            #020617;
-        color: #e5e7eb;
+            radial-gradient(circle at top left, var(--yc-bg-glow-a), transparent 38%),
+            radial-gradient(circle at top right, var(--yc-bg-glow-b), transparent 32%),
+            var(--yc-bg);
+        color: var(--yc-text);
     }
 
     .block-container {
-        padding-top: 2rem;
-        max-width: 1500px;
+        padding-top: 1.5rem;
+        padding-bottom: 3rem;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        max-width: 1440px;
     }
 
     h1 {
-        font-size: 3rem !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.06em;
-        color: #f8fafc;
-        margin-bottom: 0.2rem;
+        font-family: var(--yc-font-display) !important;
+        font-size: clamp(1.85rem, 4vw, 2.55rem) !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.03em;
+        color: var(--yc-heading);
+        margin-bottom: 0.35rem !important;
+        line-height: 1.1 !important;
     }
 
-    h2, h3 {
-        color: #f8fafc;
-        letter-spacing: -0.03em;
+    h2, h3, h4 {
+        font-family: var(--yc-font-display) !important;
+        color: var(--yc-heading);
+        letter-spacing: -0.02em;
     }
 
     .subtitle {
-        color: #94a3b8;
-        font-size: 1.05rem;
-        margin-bottom: 2rem;
+        color: var(--yc-muted);
+        font-size: 1rem;
+        line-height: 1.55;
+        margin-bottom: var(--yc-space-md);
+        max-width: 52rem;
+    }
+
+    .section-header {
+        margin: var(--yc-space-md) 0 var(--yc-space-sm);
+        padding-bottom: 0.55rem;
+        border-bottom: 1px solid var(--yc-border);
+    }
+
+    .section-header.featured {
+        border-bottom-color: rgba(56, 189, 248, 0.35);
+    }
+
+    .section-kicker {
+        color: var(--yc-accent);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 0.2rem;
+    }
+
+    .section-title {
+        font-family: var(--yc-font-display);
+        color: var(--yc-heading);
+        font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+    }
+
+    .section-subtitle {
+        color: var(--yc-muted);
+        font-size: 0.92rem;
+        margin-top: 0.3rem;
+        line-height: 1.45;
+        max-width: 48rem;
+    }
+
+    .panel {
+        background: linear-gradient(180deg, var(--yc-surface), var(--yc-surface-soft));
+        border: 1px solid var(--yc-border);
+        border-radius: var(--yc-radius);
+        padding: 1.15rem 1.25rem 1.05rem;
+        margin-bottom: var(--yc-space-md);
+        box-shadow: var(--yc-shadow);
+    }
+
+    .panel-accent {
+        border-color: rgba(56, 189, 248, 0.28);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(56, 189, 248, 0.08);
+    }
+
+    .panel-value {
+        border-color: rgba(34, 197, 94, 0.22);
     }
 
     .metric-card {
-        background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.95));
-        border: 1px solid rgba(148, 163, 184, 0.18);
-        border-radius: 22px;
-        padding: 22px;
-        box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+        background: linear-gradient(180deg, var(--yc-surface), rgba(2, 6, 23, 0.95));
+        border: 1px solid var(--yc-border);
+        border-radius: var(--yc-radius-sm);
+        padding: 14px 16px;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+        margin-bottom: var(--yc-space-xs);
+        height: 100%;
     }
 
     .match-card {
-        background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.72));
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        border-radius: 24px;
-        padding: 24px;
-        margin-bottom: 18px;
-        box-shadow: 0 16px 50px rgba(0,0,0,0.28);
+        background: linear-gradient(180deg, var(--yc-surface), var(--yc-surface-soft));
+        border: 1px solid var(--yc-border);
+        border-radius: 18px;
+        padding: 1.15rem 1.25rem 1rem;
+        margin-bottom: 1rem;
+        box-shadow: var(--yc-shadow);
     }
 
     .badge {
         display: inline-block;
-        padding: 6px 11px;
+        padding: 5px 10px;
         border-radius: 999px;
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         font-weight: 700;
         margin-right: 6px;
+        margin-bottom: 4px;
+        letter-spacing: 0.02em;
+        vertical-align: middle;
     }
 
-    .good { background: rgba(34,197,94,.15); color: #86efac; border: 1px solid rgba(34,197,94,.35); }
-    .warn { background: rgba(245,158,11,.14); color: #fcd34d; border: 1px solid rgba(245,158,11,.35); }
-    .bad { background: rgba(239,68,68,.14); color: #fca5a5; border: 1px solid rgba(239,68,68,.35); }
-    .neutral { background: rgba(59,130,246,.14); color: #93c5fd; border: 1px solid rgba(59,130,246,.35); }
+    .good { background: var(--yc-good-bg); color: var(--yc-good-fg); border: 1px solid var(--yc-good-bd); }
+    .warn { background: var(--yc-warn-bg); color: var(--yc-warn-fg); border: 1px solid var(--yc-warn-bd); }
+    .bad { background: var(--yc-bad-bg); color: var(--yc-bad-fg); border: 1px solid var(--yc-bad-bd); }
+    .neutral { background: var(--yc-neutral-bg); color: var(--yc-neutral-fg); border: 1px solid var(--yc-neutral-bd); }
 
     .small-label {
-        color: #94a3b8;
-        font-size: 0.78rem;
+        color: var(--yc-muted);
+        font-size: 0.72rem;
         text-transform: uppercase;
         letter-spacing: .08em;
-        font-weight: 700;
+        font-weight: 600;
     }
 
     .big-number {
-        color: #f8fafc;
-        font-size: 2rem;
-        font-weight: 800;
-        margin-top: -5px;
+        color: var(--yc-heading);
+        font-family: var(--yc-font-display);
+        font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+        font-weight: 700;
+        margin-top: 2px;
+        line-height: 1.15;
     }
 
     .reason-box {
-        background: rgba(2, 6, 23, 0.55);
+        background: var(--yc-surface-deep);
         border: 1px solid rgba(148, 163, 184, 0.12);
-        border-radius: 16px;
-        padding: 15px;
+        border-radius: 14px;
+        padding: 14px 16px;
         color: #cbd5e1;
-        font-size: 0.95rem;
+        font-size: 0.92rem;
+        line-height: 1.55;
+        margin-top: 0.75rem;
     }
 
-    div[data-testid="stDataFrame"] {
-        border-radius: 20px;
+    .overview-line {
+        color: var(--yc-muted);
+        font-size: 0.9rem;
+        margin: 0.15rem 0 0.65rem;
+    }
+
+    div[data-testid="stDataFrame"],
+    div[data-testid="stDataEditor"] {
+        border-radius: 14px;
         overflow: hidden;
-        border: 1px solid rgba(148,163,184,.15);
+        border: 1px solid var(--yc-border);
+    }
+
+    div[data-testid="stMetric"] {
+        background: var(--yc-surface-soft);
+        border: 1px solid var(--yc-border);
+        border-radius: var(--yc-radius-sm);
+        padding: 12px 14px 10px;
+    }
+
+    div[data-testid="stMetric"] label {
+        color: var(--yc-muted) !important;
+    }
+
+    div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+        color: var(--yc-heading) !important;
+        font-family: var(--yc-font-display);
+        font-weight: 700;
     }
 
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
+        gap: 8px;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
     }
 
     .stTabs [data-baseweb="tab"] {
-        background-color: rgba(15,23,42,.88);
-        border-radius: 999px;
-        padding: 10px 18px;
-        border: 1px solid rgba(148,163,184,.18);
+        background-color: var(--yc-surface);
+        border-radius: var(--yc-radius-sm);
+        padding: 10px 16px;
+        border: 1px solid var(--yc-border);
         color: #cbd5e1;
+        font-weight: 600;
     }
 
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #2563eb, #06b6d4);
+        background: linear-gradient(135deg, var(--yc-accent-strong), var(--yc-accent-deep));
         color: white;
-        border: none;
+        border: 1px solid transparent;
+    }
+
+    div[data-testid="stRadio"] > div {
+        gap: 0.35rem 0.85rem;
+        flex-wrap: wrap;
+    }
+
+    div[data-testid="stRadio"] label {
+        background: var(--yc-surface-soft);
+        border: 1px solid var(--yc-border);
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem !important;
+    }
+
+    .stButton > button {
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        border: 1px solid var(--yc-border-strong) !important;
+        min-height: 2.6rem;
+    }
+
+    .stButton > button[kind="primary"],
+    .stButton > button[data-testid="baseButton-primary"] {
+        background: linear-gradient(135deg, var(--yc-accent-strong), var(--yc-accent-deep)) !important;
+        border: 1px solid transparent !important;
+        color: #fff !important;
+    }
+
+    div[data-baseweb="select"] > div,
+    .stTextInput input,
+    .stNumberInput input,
+    .stDateInput input {
+        background-color: rgba(2, 6, 23, 0.55) !important;
+        border-color: var(--yc-border) !important;
+        border-radius: 10px !important;
+        color: var(--yc-text) !important;
+    }
+
+    .stExpander {
+        border: 1px solid var(--yc-border) !important;
+        border-radius: var(--yc-radius-sm) !important;
+        background: var(--yc-surface-soft);
+    }
+
+    @media (max-width: 768px) {
+        .block-container {
+            padding-left: 0.85rem;
+            padding-right: 0.85rem;
+            padding-top: 1rem;
+        }
+
+        .match-card,
+        .panel {
+            padding: 0.95rem 1rem;
+            border-radius: 14px;
+        }
+
+        .big-number {
+            font-size: 1.35rem;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
     }
     </style>
     """,
@@ -307,6 +508,26 @@ def fmt_num(value):
         return "N/A"
 
 
+def section_header(title, subtitle=None, kicker=None, featured=False):
+    featured_class = " featured" if featured else ""
+    kicker_html = (
+        f'<div class="section-kicker">{kicker}</div>' if kicker else ""
+    )
+    subtitle_html = (
+        f'<div class="section-subtitle">{subtitle}</div>' if subtitle else ""
+    )
+    st.markdown(
+        f"""
+        <div class="section-header{featured_class}">
+            {kicker_html}
+            <div class="section-title">{title}</div>
+            {subtitle_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def match_card(row):
     confidence = str(row.get("confidence", ""))
     signal = str(row.get("signal", ""))
@@ -323,15 +544,15 @@ def match_card(row):
 
     st.markdown("<div class='match-card'>", unsafe_allow_html=True)
 
-    top_left, top_right = st.columns([2.2, 1])
+    top_left, top_right = st.columns([2.4, 1], gap="medium")
 
     with top_left:
         st.markdown(
             f"""
-            <div class="small-label">{row.get('Div', '')} ┬╖ {row['Date'].strftime('%m/%d/%Y')}</div>
-            <h3 style="margin-top: 6px;">{row['HomeTeam']} vs {row['AwayTeam']}</h3>
-            {badge(signal, signal_kind)} {badge(confidence, confidence_kind)} {badge('VALUE: ' + value_bet, value_kind)}
-            <div style="margin-top: 10px;">{data_source_badges(row)}</div>
+            <div class="small-label">{row.get('Div', '')} &middot; {row['Date'].strftime('%m/%d/%Y')}</div>
+            <h3 style="margin: 4px 0 10px; font-size: 1.35rem;">{row['HomeTeam']} vs {row['AwayTeam']}</h3>
+            <div>{badge(signal, signal_kind)} {badge(confidence, confidence_kind)} {badge('VALUE: ' + value_bet, value_kind)}</div>
+            <div style="margin-top: 8px;">{data_source_badges(row)}</div>
             """,
             unsafe_allow_html=True,
         )
@@ -340,12 +561,14 @@ def match_card(row):
         st.markdown(
             f"""
             <div class="small-label">Referee</div>
-            <div style="font-size:1.15rem;font-weight:700;color:#f8fafc;">{referee_display(row.get('Referee'))}</div>
+            <div style="font-size:1.05rem;font-weight:600;color:var(--yc-heading);margin-top:4px;line-height:1.35;">
+                {referee_display(row.get('Referee'))}
+            </div>
             """,
             unsafe_allow_html=True,
         )
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4 = st.columns(4, gap="small")
 
     with c1:
         st.markdown(
@@ -397,10 +620,10 @@ def render_match_list(rows, empty_message):
 
 
 def render_predictions_hub(predictions, top_bets, ultra_top_bets, high_conf, missing_ref):
-    st.subheader("Predictions")
-    st.caption(
-        "Browse upcoming matches by signal quality. Filters only change what is shown — "
-        "prediction logic and source data are unchanged."
+    section_header(
+        "Predictions",
+        "Browse upcoming matches by signal quality. Filters only change what is shown.",
+        kicker="Batch signals",
     )
 
     view = st.radio(
@@ -438,35 +661,44 @@ def render_predictions_hub(predictions, top_bets, ultra_top_bets, high_conf, mis
             render_match_list(missing_ref, "No matches are missing referee data.")
     else:
         st.subheader("All Upcoming Predictions")
-        st.dataframe(predictions, use_container_width=True)
+        st.dataframe(predictions, width="stretch")
 
 
 def render_bet_tracker():
     summary = calculate_summary()
     tracking = load_tracking_data()
 
-    st.subheader("Prediction History")
+    section_header(
+        "Prediction History",
+        "Saved live picks and outcomes. Enter Final Cards after a match finishes — "
+        "Result and Profit are calculated from Pick, Line, Odds, and Stake.",
+        kicker="Tracker",
+        featured=True,
+    )
 
-    c1, c2, c3, c4, c5, c6, c7, c8 = st.columns(8)
-    c1.metric("Total Saved", summary["total_bets"])
-    c2.metric("Wins", summary["wins"])
-    c3.metric("Losses", summary["losses"])
-    c4.metric("Pending", summary["pending"])
-    c5.metric("Total Profit", fmt_num(summary["total_profit"]))
-    c6.metric("ROI", fmt_pct(summary["roi"]))
-    c7.metric("Win Rate", fmt_pct(summary["win_rate"]))
-    c8.metric("Avg Edge", fmt_pct(summary["avg_edge"]))
+    row_a = st.columns(4, gap="small")
+    row_a[0].metric("Total Saved", summary["total_bets"])
+    row_a[1].metric("Wins", summary["wins"])
+    row_a[2].metric("Losses", summary["losses"])
+    row_a[3].metric("Pending", summary["pending"])
+
+    row_b = st.columns(4, gap="small")
+    row_b[0].metric("Total Profit", fmt_num(summary["total_profit"]))
+    row_b[1].metric("ROI", fmt_pct(summary["roi"]))
+    row_b[2].metric("Win Rate", fmt_pct(summary["win_rate"]))
+    row_b[3].metric("Avg Edge", fmt_pct(summary["avg_edge"]))
 
     if tracking.empty:
         st.info("No predictions have been saved yet.")
         return
 
-    st.caption(
-        "Enter FinalCards after a match finishes. Result and Profit are calculated automatically from Pick, Line, Odds, and Stake."
+    st.markdown(
+        '<div class="small-label">History editor</div>',
+        unsafe_allow_html=True,
     )
     edited_tracking = st.data_editor(
         tracking,
-        use_container_width=True,
+        width="stretch",
         num_rows="dynamic",
         disabled=[
             "Result",
@@ -517,8 +749,8 @@ def render_bet_tracker():
     evaluated_tracking = evaluate_tracking(edited_tracking)
     live_summary = calculate_summary_for_tracking(evaluated_tracking)
 
-    st.markdown("#### Live Summary")
-    p1, p2, p3, p4 = st.columns(4)
+    section_header("Live Summary", kicker="Projected")
+    p1, p2, p3, p4 = st.columns(4, gap="small")
     p1.metric("Projected Profit", fmt_num(live_summary["total_profit"]))
     p2.metric("Projected ROI", fmt_pct(live_summary["roi"]))
     p3.metric("Projected Win Rate", fmt_pct(live_summary["win_rate"]))
@@ -534,10 +766,10 @@ def render_bet_tracker():
         roi_by_confidence["ROI"] = roi_by_confidence["ROI"].map(
             lambda roi: f"{roi:.1%}"
         )
-        st.dataframe(roi_by_confidence, use_container_width=True)
+        st.dataframe(roi_by_confidence, width="stretch")
 
-    st.markdown("#### Calculated Results Preview")
-    st.dataframe(evaluated_tracking, use_container_width=True)
+    with st.expander("Calculated results preview", expanded=False):
+        st.dataframe(evaluated_tracking, width="stretch")
 
     if st.button("Save Final Cards", type="primary"):
         save_tracking_edits(evaluated_tracking)
@@ -560,9 +792,11 @@ def render_ultra_value(ultra_top_bets):
 
 
 def render_player_card_risk():
-    st.subheader("Player Card Risk")
-    st.caption(
-        "Early heuristic model: this ranks manual player profiles and lineups using position, card rate, and match context. It is not a trained player model yet."
+    section_header(
+        "Player Card Risk",
+        "Batch heuristic rankings from saved profiles and lineups. "
+        "For live fixtures, use Live Match Builder.",
+        kicker="Batch risk",
     )
 
     risks = load_player_risks()
@@ -579,7 +813,7 @@ def render_player_card_risk():
         date_text = match_date.strftime("%m/%d/%Y") if pd.notna(match_date) else "N/A"
         st.markdown(f"### {home_team} vs {away_team}")
         st.caption(date_text)
-        st.dataframe(match_risks[display_columns], use_container_width=True)
+        st.dataframe(match_risks[display_columns], width="stretch")
 
 
 
@@ -596,10 +830,12 @@ def load_live_fixture_details(fixture_id):
 
 
 def render_live_match_builder():
-    st.subheader("Live Match Builder")
-    st.caption(
+    section_header(
+        "Live Match Builder",
         "Select a date, league, and fixture to retrieve match details, "
-        "referee information, and confirmed lineups automatically."
+        "referee information, and confirmed lineups automatically.",
+        kicker="Live workflow",
+        featured=True,
     )
 
     use_test_fixture = st.checkbox(
@@ -639,34 +875,36 @@ def render_live_match_builder():
         }
     )
 
-    selected_league = st.selectbox(
-        "League",
-        options=["All leagues"] + leagues,
-        key="live_fixture_league",
-    )
+    selector_left, selector_right = st.columns(2, gap="medium")
+    with selector_left:
+        selected_league = st.selectbox(
+            "League",
+            options=["All leagues"] + leagues,
+            key="live_fixture_league",
+        )
+    with selector_right:
+        filtered_fixtures = fixtures
+        if selected_league != "All leagues":
+            filtered_fixtures = [
+                fixture
+                for fixture in fixtures
+                if fixture.get("league") == selected_league
+            ]
 
-    filtered_fixtures = fixtures
-    if selected_league != "All leagues":
-        filtered_fixtures = [
-            fixture
-            for fixture in fixtures
-            if fixture.get("league") == selected_league
-        ]
+        if not filtered_fixtures:
+            st.info("No fixtures are available for the selected league.")
+            return
 
-    if not filtered_fixtures:
-        st.info("No fixtures are available for the selected league.")
-        return
+        fixture_options = {
+            get_fixture_label(fixture): fixture
+            for fixture in filtered_fixtures
+        }
 
-    fixture_options = {
-        get_fixture_label(fixture): fixture
-        for fixture in filtered_fixtures
-    }
-
-    selected_fixture_label = st.selectbox(
-        "Fixture",
-        options=list(fixture_options.keys()),
-        key="live_fixture_selection",
-    )
+        selected_fixture_label = st.selectbox(
+            "Fixture",
+            options=list(fixture_options.keys()),
+            key="live_fixture_selection",
+        )
 
     selected_fixture = fixture_options[selected_fixture_label]
     fixture_id = selected_fixture.get("fixture_id")
@@ -694,9 +932,9 @@ def render_live_match_builder():
     lineup_rows = fixture_data.get("lineups", [])
     lineups_available = fixture_data.get("lineups_available", False)
 
-    st.markdown("### Match Details")
+    section_header("Match Details", kicker="Fixture")
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4 = st.columns(4, gap="small")
     c1.metric("Home Team", fixture.get("home_team") or "Unknown")
     c2.metric("Away Team", fixture.get("away_team") or "Unknown")
     c3.metric("League", fixture.get("league") or "Unknown")
@@ -715,14 +953,14 @@ def render_live_match_builder():
 
     st.markdown(
         f"""
-        <div class="match-card">
+        <div class="panel panel-accent">
             <div class="small-label">Selected Fixture</div>
-            <h3>{fixture.get("home_team", "Unknown")} vs {fixture.get("away_team", "Unknown")}</h3>
-            <div style="margin-top: 12px;">
+            <h3 style="margin: 6px 0 10px;">{fixture.get("home_team", "Unknown")} vs {fixture.get("away_team", "Unknown")}</h3>
+            <div style="margin-top: 8px;">
                 {referee_badge}
                 {lineup_badge}
             </div>
-            <div style="margin-top: 16px;">
+            <div class="reason-box">
                 <b>Referee:</b> {referee or "Not assigned or not yet available"}<br>
                 <b>Kickoff:</b> {fixture.get("date") or "Unknown"}<br>
                 <b>Country:</b> {fixture.get("country") or "Unknown"}
@@ -747,9 +985,14 @@ def render_live_match_builder():
 
     prediction = st.session_state.get("live_prediction")
     if prediction and prediction.get("fixture_id") == fixture_id:
-        st.markdown("### Match Prediction")
+        section_header(
+            "Match Prediction",
+            "Model output for the selected fixture.",
+            kicker="Live model",
+            featured=True,
+        )
 
-        p1, p2, p3 = st.columns(3)
+        p1, p2, p3 = st.columns(3, gap="small")
         p1.metric(
             "Predicted Total Cards",
             fmt_num(prediction["predicted_cards"]),
@@ -776,9 +1019,9 @@ def render_live_match_builder():
 
         st.markdown(
             f"""
-            <div class="match-card">
+            <div class="panel panel-accent">
                 <div class="small-label">Prediction Inputs</div>
-                <div style="margin: 10px 0 16px;">{profile_badge}</div>
+                <div style="margin: 10px 0 12px;">{profile_badge}</div>
                 <div class="reason-box">
                     <b>Referee profile status:</b> {referee_name}<br>
                     <b>Historical team mapping:</b><br>
@@ -790,7 +1033,12 @@ def render_live_match_builder():
             unsafe_allow_html=True,
         )
 
-        st.markdown("### Card Market Value")
+        section_header(
+            "Card Market Value",
+            "Compare model probabilities against verified card-market odds.",
+            kicker="Betting value",
+            featured=True,
+        )
         st.warning(
             "Entered odds must be for total match cards Over/Under 4.5, not goals. "
             "Generic soccer totals odds are not card-market odds."
@@ -814,7 +1062,7 @@ def render_live_match_builder():
         else:
             source = MANUAL_TEST_ODDS if use_test_fixture else VERIFIED_CARD_MARKET
             st.caption(f"Odds source: {source}")
-            odds_columns = st.columns(2)
+            odds_columns = st.columns(2, gap="medium")
             if use_test_fixture:
                 over_odds = odds_columns[0].number_input(
                     "Over 4.5 decimal card odds",
@@ -889,7 +1137,7 @@ def render_live_match_builder():
                         }
                     )
                 st.dataframe(
-                    pd.DataFrame(rows), use_container_width=True, hide_index=True
+                    pd.DataFrame(rows), width="stretch", hide_index=True
                 )
                 recommendation = value["recommendation"]
                 if recommendation:
@@ -933,11 +1181,11 @@ def render_live_match_builder():
         lineup_dataframe["lineup_type"] == "Substitute"
     ].copy()
 
-    st.markdown("### Confirmed Lineups")
+    section_header("Confirmed Lineups", kicker="Squads")
 
     home_team = fixture.get("home_team")
     away_team = fixture.get("away_team")
-    home_column, away_column = st.columns(2)
+    home_column, away_column = st.columns(2, gap="medium")
 
     with home_column:
         st.markdown(f"#### {home_team}")
@@ -949,7 +1197,7 @@ def render_live_match_builder():
                 home_starters[
                     ["number", "player", "position", "formation", "grid"]
                 ],
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
@@ -962,7 +1210,7 @@ def render_live_match_builder():
                 home_substitutes[
                     ["number", "player", "position"]
                 ],
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
@@ -976,7 +1224,7 @@ def render_live_match_builder():
                 away_starters[
                     ["number", "player", "position", "formation", "grid"]
                 ],
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
@@ -989,21 +1237,22 @@ def render_live_match_builder():
                 away_substitutes[
                     ["number", "player", "position"]
                 ],
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
-    st.markdown("### Live Player Card Risk")
+    section_header(
+        "Live Player Card Risk",
+        "CSV profiles are used first. Fetching is manual and limited to "
+        "5 unmatched starters per action.",
+        kicker="Player risk",
+    )
     if not prediction or prediction.get("fixture_id") != fixture_id:
         st.info(
             "Generate the match prediction to score confirmed starters."
         )
         return
 
-    st.caption(
-        "CSV profiles are used first. Fetching is manual and limited to "
-        "5 unmatched starters per action."
-    )
     fetch_missing_profiles = st.button(
         "Fetch Missing Player Profiles",
         key=f"fetch_missing_player_profiles_{fixture_id}",
@@ -1022,7 +1271,7 @@ def render_live_match_builder():
         return
 
     counts = live_risks.attrs.get("profile_counts", {})
-    source_columns = st.columns(4)
+    source_columns = st.columns(4, gap="small")
     source_columns[0].metric("CSV Profiles", counts.get("csv", 0))
     source_columns[1].metric("Cached API Profiles", counts.get("cache", 0))
     source_columns[2].metric("Live API Profiles", counts.get("live_api", 0))
@@ -1047,14 +1296,14 @@ def render_live_match_builder():
         st.markdown("#### Top Five Matched Starters")
         st.dataframe(
             matched_risks.head(5),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         if len(matched_risks) > 5:
             with st.expander("Other matched starters"):
                 st.dataframe(
                     matched_risks.iloc[5:],
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True,
                 )
 
@@ -1068,7 +1317,7 @@ def render_live_match_builder():
             )
             st.dataframe(
                 unmatched_risks,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
@@ -1103,14 +1352,14 @@ st.caption(
 )
 
 with st.expander("Overview metrics", expanded=False):
-    m1, m2, m3, m4, m5 = st.columns(5)
+    m1, m2, m3, m4, m5 = st.columns(5, gap="small")
     m1.metric("Upcoming Matches", len(predictions))
     m2.metric("High Confidence", len(high_conf))
     m3.metric("Missing Ref Data", len(missing_ref))
     m4.metric("Top Bets", len(top_bets))
     m5.metric("Ultra Value", len(ultra_top_bets))
 
-    s1, s2, s3, s4 = st.columns(4)
+    s1, s2, s3, s4 = st.columns(4, gap="small")
     s1.metric("API Odds Fixtures", api_odds_count)
     s2.metric("Manual Odds Fixtures", manual_odds_count)
     s3.metric("Default Odds Fixtures", default_odds_count)
