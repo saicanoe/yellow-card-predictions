@@ -6,6 +6,12 @@ from live_predictor import (
     LivePredictionError,
     generate_live_prediction,
 )
+from live_betting_value import (
+    MANUAL_TEST_ODDS,
+    UNAVAILABLE_ODDS,
+    VERIFIED_CARD_MARKET,
+    calculate_live_betting_value,
+)
 
 from api_football import (
     APIFootballError,
@@ -701,6 +707,113 @@ def render_live_match_builder():
             """,
             unsafe_allow_html=True,
         )
+
+        st.markdown("### Card Market Value")
+        st.warning(
+            "Entered odds must be for total match cards Over/Under 4.5, not goals. "
+            "Generic soccer totals odds are not card-market odds."
+        )
+        odds_available = use_test_fixture or st.checkbox(
+            "I have verified total-match card odds",
+            key=f"verified_card_odds_{fixture_id}",
+        )
+        if not odds_available:
+            calculate_live_betting_value(
+                prediction["over_4_5_probability"],
+                prediction["under_4_5_probability"],
+                None,
+                None,
+                UNAVAILABLE_ODDS,
+            )
+            st.info(
+                "Card-market odds are unavailable. No live betting recommendation "
+                "will be made without verified prices."
+            )
+        else:
+            source = MANUAL_TEST_ODDS if use_test_fixture else VERIFIED_CARD_MARKET
+            st.caption(f"Odds source: {source}")
+            odds_columns = st.columns(2)
+            if use_test_fixture:
+                over_odds = odds_columns[0].number_input(
+                    "Over 4.5 decimal card odds",
+                    min_value=1.01,
+                    value=2.00,
+                    step=0.01,
+                    key=f"over_card_odds_{fixture_id}",
+                )
+                under_odds = odds_columns[1].number_input(
+                    "Under 4.5 decimal card odds",
+                    min_value=1.01,
+                    value=1.80,
+                    step=0.01,
+                    key=f"under_card_odds_{fixture_id}",
+                )
+            else:
+                over_odds = odds_columns[0].text_input(
+                    "Over 4.5 decimal card odds",
+                    placeholder="Enter verified card odds",
+                    key=f"over_card_odds_{fixture_id}",
+                )
+                under_odds = odds_columns[1].text_input(
+                    "Under 4.5 decimal card odds",
+                    placeholder="Enter verified card odds",
+                    key=f"under_card_odds_{fixture_id}",
+                )
+            stake = st.number_input(
+                "Stake",
+                min_value=0.0,
+                value=1.0,
+                step=0.5,
+                key=f"card_value_stake_{fixture_id}",
+            )
+            if not use_test_fixture and (not over_odds.strip() or not under_odds.strip()):
+                st.info("Enter both verified card-market prices to calculate value.")
+                value = None
+            else:
+                try:
+                    value = calculate_live_betting_value(
+                        prediction["over_4_5_probability"],
+                        prediction["under_4_5_probability"],
+                        over_odds,
+                        under_odds,
+                        source,
+                        stake,
+                    )
+                except ValueError as error:
+                    st.error(str(error))
+                    value = None
+            if value is not None:
+                st.caption(
+                    "Bookmaker margin / overround: "
+                    f"{fmt_pct(value['bookmaker_margin'])}"
+                )
+                rows = []
+                for side, metrics in value["sides"].items():
+                    rows.append(
+                        {
+                            "Side": side,
+                            "Model Probability": fmt_pct(metrics["model_probability"]),
+                            "Decimal Odds": f"{metrics['decimal_odds']:.2f}",
+                            "No-Vig Market Probability": fmt_pct(
+                                metrics["no_vig_implied_probability"]
+                            ),
+                            "Edge": fmt_pct(metrics["probability_edge"]),
+                            "Expected Value": fmt_pct(
+                                metrics["expected_value_per_unit"]
+                            ),
+                            f"Expected Profit ({stake:g} stake)": (
+                                f"{metrics['expected_profit']:+.2f}"
+                            ),
+                        }
+                    )
+                st.dataframe(
+                    pd.DataFrame(rows), use_container_width=True, hide_index=True
+                )
+                recommendation = value["recommendation"]
+                if recommendation:
+                    st.success(f"Recommendation: {recommendation}")
+                else:
+                    st.info("No positive EV")
 
     if not lineups_available or not lineup_rows:
         st.info(
