@@ -510,6 +510,54 @@ st.markdown(
         line-height: 1.1;
     }
 
+    .history-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin: 0.35rem 0 1rem;
+    }
+
+    .history-summary-grid .match-metric {
+        background: linear-gradient(180deg, var(--yc-surface), rgba(2, 6, 23, 0.9));
+        border-color: rgba(148, 163, 184, 0.16);
+    }
+
+    .history-entry-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        align-items: center;
+        margin: 0.25rem 0 0.85rem;
+    }
+
+    .history-projected-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin: 0.35rem 0 0.85rem;
+    }
+
+    .editor-hint {
+        color: var(--yc-muted);
+        font-size: 0.88rem;
+        line-height: 1.45;
+        margin: 0.15rem 0 0.65rem;
+    }
+
+    div[data-testid="stDataFrame"],
+    div[data-testid="stDataEditor"] {
+        overflow-x: auto;
+    }
+
+    .stMarkdown, .stCaption, .stText {
+        overflow-wrap: anywhere;
+    }
+
+    h1, h2, h3, .section-title, .workflow-stage-title, .match-card-title, .recommend-title {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
     .badge {
         display: inline-block;
         padding: 5px 10px;
@@ -652,6 +700,11 @@ st.markdown(
         .risk-top-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
         }
+
+        .history-summary-grid,
+        .history-projected-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     @media (max-width: 900px) {
@@ -670,9 +723,10 @@ st.markdown(
 
     @media (max-width: 768px) {
         .block-container {
-            padding-left: 0.85rem;
-            padding-right: 0.85rem;
-            padding-top: 1rem;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+            padding-top: 0.85rem;
+            max-width: 100%;
         }
 
         .match-card,
@@ -680,24 +734,54 @@ st.markdown(
         .recommend-panel,
         .workflow-stage,
         .lineup-team-panel {
-            padding: 0.95rem 1rem;
+            padding: 0.85rem 0.9rem;
             border-radius: 14px;
         }
 
         .match-card-top,
         .side-compare-grid,
         .context-meta-grid,
-        .risk-top-grid {
+        .risk-top-grid,
+        .history-summary-grid,
+        .history-projected-grid {
             grid-template-columns: 1fr;
         }
 
-        .big-number {
-            font-size: 1.35rem;
+        .big-number,
+        .risk-score-value {
+            font-size: 1.3rem;
+        }
+
+        .section-title,
+        .workflow-stage-title {
+            font-size: 1.05rem;
+        }
+
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 6px;
         }
 
         .stTabs [data-baseweb="tab"] {
-            padding: 8px 12px;
-            font-size: 0.9rem;
+            padding: 8px 11px;
+            font-size: 0.84rem;
+            border-radius: 10px;
+        }
+
+        .stButton > button {
+            width: 100%;
+        }
+
+        div[data-testid="stMetric"] {
+            padding: 10px 12px 8px;
+        }
+
+        div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+            font-size: 1.15rem !important;
+        }
+
+        div[data-testid="stDataFrame"],
+        div[data-testid="stDataEditor"] {
+            font-size: 0.88rem;
         }
     }
     </style>
@@ -1074,6 +1158,30 @@ def render_predictions_hub(predictions, top_bets, ultra_top_bets, high_conf, mis
         st.dataframe(predictions, width="stretch")
 
 
+def is_test_tracking_row(row) -> bool:
+    league = str(row.get("League", "")).strip().upper()
+    odds_source = str(row.get("OddsSource", "")).strip().upper()
+    return league.startswith("TEST") or odds_source.startswith("TEST")
+
+
+def render_history_summary_metrics(summary):
+    st.markdown(
+        f"""
+        <div class="history-summary-grid">
+            {match_metric_html("Total Saved", summary["total_bets"])}
+            {match_metric_html("Pending", summary["pending"])}
+            {match_metric_html("Wins", summary["wins"])}
+            {match_metric_html("Losses", summary["losses"])}
+            {match_metric_html("Total Profit", fmt_num(summary["total_profit"]))}
+            {match_metric_html("ROI", fmt_pct(summary["roi"]))}
+            {match_metric_html("Win Rate", fmt_pct(summary["win_rate"]))}
+            {match_metric_html("Avg Edge", fmt_pct(summary["avg_edge"]))}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_bet_tracker():
     summary = calculate_summary()
     tracking = load_tracking_data()
@@ -1086,24 +1194,37 @@ def render_bet_tracker():
         featured=True,
     )
 
-    row_a = st.columns(4, gap="small")
-    row_a[0].metric("Total Saved", summary["total_bets"])
-    row_a[1].metric("Wins", summary["wins"])
-    row_a[2].metric("Losses", summary["losses"])
-    row_a[3].metric("Pending", summary["pending"])
-
-    row_b = st.columns(4, gap="small")
-    row_b[0].metric("Total Profit", fmt_num(summary["total_profit"]))
-    row_b[1].metric("ROI", fmt_pct(summary["roi"]))
-    row_b[2].metric("Win Rate", fmt_pct(summary["win_rate"]))
-    row_b[3].metric("Avg Edge", fmt_pct(summary["avg_edge"]))
+    render_history_summary_metrics(summary)
 
     if tracking.empty:
         st.info("No predictions have been saved yet.")
         return
 
+    test_mask = tracking.apply(is_test_tracking_row, axis=1)
+    test_count = int(test_mask.sum())
+    live_count = int((~test_mask).sum())
+    st.markdown(
+        f"""
+        <div class="history-entry-legend">
+            {badge(f"{live_count} LIVE", "good")}
+            {badge(f"{test_count} TEST", "warn")}
+            <span class="editor-hint" style="margin:0;">
+                TEST rows are marked with a <b>TEST -</b> prefix on League and/or Odds Source.
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.markdown(
         '<div class="small-label">History editor</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="editor-hint">'
+        "Edit Final Cards after settlement. Result and Profit stay read-only and recalculate "
+        "from Pick, Line, Odds, and Stake. Scroll horizontally on narrow screens."
+        "</div>",
         unsafe_allow_html=True,
     )
     edited_tracking = st.data_editor(
@@ -1125,33 +1246,61 @@ def render_bet_tracker():
         ],
         column_order=TRACKING_COLUMNS,
         column_config={
-            "Date": st.column_config.DateColumn("Date"),
-            "Pick": st.column_config.TextColumn("Pick"),
+            "Date": st.column_config.DateColumn("Date", width="small"),
+            "HomeTeam": st.column_config.TextColumn("Home", width="medium"),
+            "AwayTeam": st.column_config.TextColumn("Away", width="medium"),
+            "Pick": st.column_config.TextColumn("Pick", width="small"),
             "Result": st.column_config.SelectboxColumn(
-                "Result", options=["PENDING", "WIN", "LOSS", "PUSH"]
+                "Result",
+                options=["PENDING", "WIN", "LOSS", "PUSH"],
+                width="small",
+                help="Calculated automatically. Not editable.",
             ),
-            "Line": st.column_config.NumberColumn("Line", step=0.5),
-            "Odds": st.column_config.NumberColumn("Odds", step=0.01),
-            "Stake": st.column_config.NumberColumn("Stake", step=0.25),
-            "Edge": st.column_config.NumberColumn("Edge", format="%.3f"),
-            "Confidence": st.column_config.TextColumn("Confidence"),
+            "Line": st.column_config.NumberColumn("Line", step=0.5, width="small"),
+            "Odds": st.column_config.NumberColumn("Odds", step=0.01, width="small"),
+            "Stake": st.column_config.NumberColumn("Stake", step=0.25, width="small"),
+            "Edge": st.column_config.NumberColumn(
+                "Edge", format="%.3f", width="small"
+            ),
+            "Confidence": st.column_config.TextColumn("Confidence", width="medium"),
             "FinalCards": st.column_config.NumberColumn(
-                "Final Cards", min_value=0, step=1
+                "Final Cards",
+                min_value=0,
+                step=1,
+                width="small",
+                help="Enter settled total cards for this fixture.",
             ),
-            "Profit": st.column_config.NumberColumn("Profit", format="%.2f"),
+            "Profit": st.column_config.NumberColumn(
+                "Profit",
+                format="%.2f",
+                width="small",
+                help="Calculated automatically. Not editable.",
+            ),
+            "FixtureID": st.column_config.NumberColumn("Fixture ID", width="small"),
+            "League": st.column_config.TextColumn(
+                "League",
+                width="medium",
+                help="TEST - prefix marks development / test fixture entries.",
+            ),
+            "Referee": st.column_config.TextColumn("Referee", width="medium"),
             "PredictedCards": st.column_config.NumberColumn(
-                "Predicted Cards", format="%.2f"
+                "Predicted Cards", format="%.2f", width="small"
             ),
             "ModelProbability": st.column_config.NumberColumn(
-                "Model Probability", format="percent"
+                "Model Probability", format="percent", width="small"
             ),
             "MarketProbability": st.column_config.NumberColumn(
-                "Market Probability", format="percent"
+                "Market Probability", format="percent", width="small"
             ),
             "ExpectedValue": st.column_config.NumberColumn(
-                "Expected Value", format="percent"
+                "Expected Value", format="percent", width="small"
             ),
-            "OddsSource": st.column_config.TextColumn("Odds Source"),
+            "OddsSource": st.column_config.TextColumn(
+                "Odds Source",
+                width="medium",
+                help="TEST - prefix marks development odds sources.",
+            ),
+            "SavedAt": st.column_config.TextColumn("Saved At", width="medium"),
         },
         key="bet_tracking_editor",
     )
@@ -1159,27 +1308,55 @@ def render_bet_tracker():
     evaluated_tracking = evaluate_tracking(edited_tracking)
     live_summary = calculate_summary_for_tracking(evaluated_tracking)
 
-    section_header("Live Summary", kicker="Projected")
-    p1, p2, p3, p4 = st.columns(4, gap="small")
-    p1.metric("Projected Profit", fmt_num(live_summary["total_profit"]))
-    p2.metric("Projected ROI", fmt_pct(live_summary["roi"]))
-    p3.metric("Projected Win Rate", fmt_pct(live_summary["win_rate"]))
-    p4.metric("Avg Edge", fmt_pct(live_summary["avg_edge"]))
-
-    roi_by_confidence = pd.DataFrame(
-        [
-            {"Confidence": confidence, "ROI": roi}
-            for confidence, roi in live_summary["roi_by_confidence"].items()
-        ]
+    st.markdown(
+        '<div class="small-label">Projected from current editor values</div>',
+        unsafe_allow_html=True,
     )
-    if not roi_by_confidence.empty:
-        roi_by_confidence["ROI"] = roi_by_confidence["ROI"].map(
-            lambda roi: f"{roi:.1%}"
-        )
-        st.dataframe(roi_by_confidence, width="stretch")
+    st.markdown(
+        f"""
+        <div class="history-projected-grid">
+            {match_metric_html("Projected Profit", fmt_num(live_summary["total_profit"]))}
+            {match_metric_html("Projected ROI", fmt_pct(live_summary["roi"]))}
+            {match_metric_html("Projected Win Rate", fmt_pct(live_summary["win_rate"]))}
+            {match_metric_html("Avg Edge", fmt_pct(live_summary["avg_edge"]))}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with st.expander("Calculated results preview", expanded=False):
-        st.dataframe(evaluated_tracking, width="stretch")
+    with st.expander("Secondary analytics", expanded=False):
+        st.caption("ROI by confidence band from the current editor values.")
+        roi_by_confidence = pd.DataFrame(
+            [
+                {"Confidence": confidence, "ROI": roi}
+                for confidence, roi in live_summary["roi_by_confidence"].items()
+            ]
+        )
+        if roi_by_confidence.empty:
+            st.info("No confidence breakdown available yet.")
+        else:
+            roi_by_confidence["ROI"] = roi_by_confidence["ROI"].map(
+                lambda roi: f"{roi:.1%}"
+            )
+            st.dataframe(roi_by_confidence, width="stretch", hide_index=True)
+
+        st.caption(
+            "Calculated Result and Profit preview. This mirrors the editor after "
+            "evaluation — use it to verify settlement before saving."
+        )
+        st.dataframe(evaluated_tracking, width="stretch", hide_index=True)
+
+    if test_count:
+        with st.expander(f"TEST entries ({test_count})", expanded=False):
+            st.caption(
+                "Development saves identified by a TEST - prefix on League or Odds Source. "
+                "Contents are unchanged from the editor."
+            )
+            st.dataframe(
+                tracking.loc[test_mask, TRACKING_COLUMNS],
+                width="stretch",
+                hide_index=True,
+            )
 
     if st.button("Save Final Cards", type="primary"):
         save_tracking_edits(evaluated_tracking)
