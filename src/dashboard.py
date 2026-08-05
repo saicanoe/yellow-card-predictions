@@ -374,6 +374,142 @@ st.markdown(
         text-align: right;
     }
 
+    .workflow-stage {
+        margin: 1.15rem 0 0.85rem;
+        padding: 0.85rem 1rem 0.75rem;
+        border: 1px solid var(--yc-border);
+        border-radius: var(--yc-radius);
+        background: rgba(15, 23, 42, 0.55);
+    }
+
+    .workflow-stage-label {
+        display: flex;
+        align-items: baseline;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.35rem;
+    }
+
+    .workflow-stage-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.7rem;
+        height: 1.7rem;
+        padding: 0 0.45rem;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.16);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        color: var(--yc-accent);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    .workflow-stage-title {
+        font-family: var(--yc-font-display);
+        color: var(--yc-heading);
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    .workflow-stage-subtitle {
+        color: var(--yc-muted);
+        font-size: 0.88rem;
+        line-height: 1.45;
+        margin-bottom: 0.55rem;
+    }
+
+    .context-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem 1rem;
+        margin-top: 0.75rem;
+    }
+
+    .context-meta-item .small-label {
+        margin-bottom: 0.15rem;
+    }
+
+    .context-meta-value {
+        color: var(--yc-heading);
+        font-weight: 600;
+        line-height: 1.35;
+    }
+
+    .lineup-team-panel {
+        background: var(--yc-surface-soft);
+        border: 1px solid var(--yc-border);
+        border-radius: 14px;
+        padding: 0.85rem 0.95rem 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .lineup-team-title {
+        font-family: var(--yc-font-display);
+        color: var(--yc-heading);
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 0.55rem;
+    }
+
+    .lineup-group-label {
+        color: var(--yc-accent);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin: 0.55rem 0 0.35rem;
+    }
+
+    .risk-top-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin: 0.65rem 0 0.85rem;
+    }
+
+    .risk-player-card {
+        background: linear-gradient(180deg, var(--yc-surface), rgba(2, 6, 23, 0.88));
+        border: 1px solid rgba(56, 189, 248, 0.22);
+        border-radius: 12px;
+        padding: 12px 14px;
+        min-height: 100%;
+    }
+
+    .risk-player-rank {
+        color: var(--yc-accent);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.25rem;
+    }
+
+    .risk-player-name {
+        font-family: var(--yc-font-display);
+        color: var(--yc-heading);
+        font-weight: 700;
+        font-size: 1rem;
+        line-height: 1.25;
+        margin-bottom: 0.2rem;
+    }
+
+    .risk-player-meta {
+        color: var(--yc-muted);
+        font-size: 0.82rem;
+        margin-bottom: 0.55rem;
+    }
+
+    .risk-score-value {
+        font-family: var(--yc-font-display);
+        color: var(--yc-heading);
+        font-size: 1.45rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
     .badge {
         display: inline-block;
         padding: 5px 10px;
@@ -512,6 +648,12 @@ st.markdown(
         background: var(--yc-surface-soft);
     }
 
+    @media (max-width: 1100px) {
+        .risk-top-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
     @media (max-width: 900px) {
         .match-metric-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -519,6 +661,10 @@ st.markdown(
 
         .featured-metric-grid {
             grid-template-columns: 1fr;
+        }
+
+        .risk-top-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 
@@ -531,13 +677,17 @@ st.markdown(
 
         .match-card,
         .panel,
-        .recommend-panel {
+        .recommend-panel,
+        .workflow-stage,
+        .lineup-team-panel {
             padding: 0.95rem 1rem;
             border-radius: 14px;
         }
 
         .match-card-top,
-        .side-compare-grid {
+        .side-compare-grid,
+        .context-meta-grid,
+        .risk-top-grid {
             grid-template-columns: 1fr;
         }
 
@@ -1089,13 +1239,253 @@ def load_live_fixture_details(fixture_id):
     return get_fixture_lineup_data(fixture_id)
 
 
+def workflow_stage(number, title, subtitle=None):
+    subtitle_html = (
+        f'<div class="workflow-stage-subtitle">{subtitle}</div>' if subtitle else ""
+    )
+    st.markdown(
+        f"""
+        <div class="workflow-stage">
+            <div class="workflow-stage-label">
+                <span class="workflow-stage-number">STAGE {number}</span>
+                <span class="workflow-stage-title">{title}</span>
+            </div>
+            {subtitle_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_match_context_panel(fixture, referee, lineups_available):
+    referee_badge = (
+        badge("REFEREE LOADED", "good")
+        if referee
+        else badge("NO REFEREE YET", "warn")
+    )
+    lineup_badge = (
+        badge("LINEUPS CONFIRMED", "good")
+        if lineups_available
+        else badge("LINEUPS NOT RELEASED", "warn")
+    )
+    st.markdown(
+        f"""
+        <div class="panel panel-accent">
+            <div class="small-label">Selected fixture</div>
+            <div class="match-card-title" style="margin-bottom: 8px;">
+                {fixture.get("home_team", "Unknown")} vs {fixture.get("away_team", "Unknown")}
+            </div>
+            <div>{referee_badge} {lineup_badge}</div>
+            <div class="context-meta-grid">
+                <div class="context-meta-item">
+                    <div class="small-label">League</div>
+                    <div class="context-meta-value">{fixture.get("league") or "Unknown"}</div>
+                </div>
+                <div class="context-meta-item">
+                    <div class="small-label">Status</div>
+                    <div class="context-meta-value">{fixture.get("status") or "Unknown"}</div>
+                </div>
+                <div class="context-meta-item">
+                    <div class="small-label">Kickoff</div>
+                    <div class="context-meta-value">{fixture.get("date") or "Unknown"}</div>
+                </div>
+                <div class="context-meta-item">
+                    <div class="small-label">Country</div>
+                    <div class="context-meta-value">{fixture.get("country") or "Unknown"}</div>
+                </div>
+                <div class="context-meta-item">
+                    <div class="small-label">Referee</div>
+                    <div class="context-meta-value">{referee or "Not assigned or not yet available"}</div>
+                </div>
+                <div class="context-meta-item">
+                    <div class="small-label">Lineups</div>
+                    <div class="context-meta-value">
+                        {"Confirmed" if lineups_available else "Not released yet"}
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_team_lineup(team_name, starters, substitutes):
+    st.markdown(
+        f'<div class="lineup-team-title">{team_name or "Unknown team"}</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="lineup-group-label">Starters</div>',
+        unsafe_allow_html=True,
+    )
+    if starters.empty:
+        st.info("No starters available.")
+    else:
+        st.dataframe(
+            starters[["number", "player", "position", "formation", "grid"]],
+            width="stretch",
+            hide_index=True,
+            column_config={
+                "number": st.column_config.NumberColumn("#", width="small"),
+                "player": st.column_config.TextColumn("Player"),
+                "position": st.column_config.TextColumn("Pos", width="small"),
+                "formation": st.column_config.TextColumn("Formation", width="small"),
+                "grid": st.column_config.TextColumn("Grid", width="small"),
+            },
+        )
+
+    st.markdown(
+        '<div class="lineup-group-label">Substitutes</div>',
+        unsafe_allow_html=True,
+    )
+    if substitutes.empty:
+        st.info("No substitutes available.")
+    else:
+        st.dataframe(
+            substitutes[["number", "player", "position"]],
+            width="stretch",
+            hide_index=True,
+            column_config={
+                "number": st.column_config.NumberColumn("#", width="small"),
+                "player": st.column_config.TextColumn("Player"),
+                "position": st.column_config.TextColumn("Pos", width="small"),
+            },
+        )
+
+
+def format_live_risk_display(risks):
+    display = risks.copy()
+    if "RiskScore" in display.columns:
+        display["RiskScore"] = display["RiskScore"].apply(
+            lambda value: "N/A" if pd.isna(value) else f"{float(value):.2f}"
+        )
+    if "ProfileMatched" in display.columns:
+        display["ProfileMatched"] = display["ProfileMatched"].map(
+            lambda value: "Yes" if bool(value) else "No"
+        )
+    if "RiskTier" in display.columns:
+        display["RiskTier"] = display["RiskTier"].fillna("N/A").astype(str)
+    if "ProfileSource" in display.columns:
+        display["ProfileSource"] = (
+            display["ProfileSource"].fillna("Unmatched / not fetched").astype(str)
+        )
+    preferred = [
+        "Player",
+        "Team",
+        "Position",
+        "RiskScore",
+        "RiskTier",
+        "ProfileSource",
+        "ProfileMatched",
+    ]
+    ordered = [column for column in preferred if column in display.columns]
+    remaining = [column for column in display.columns if column not in ordered]
+    return display[ordered + remaining]
+
+
+def render_top_matched_risk_cards(matched_risks):
+    top_rows = matched_risks.head(5)
+    cards = []
+    for rank, (_, row) in enumerate(top_rows.iterrows(), start=1):
+        score = row.get("RiskScore")
+        score_text = "N/A" if pd.isna(score) else f"{float(score):.2f}"
+        tier = row.get("RiskTier")
+        tier_text = "N/A" if pd.isna(tier) or str(tier).strip() == "" else str(tier)
+        source = row.get("ProfileSource") or "Unknown source"
+        cards.append(
+            f"""
+            <div class="risk-player-card">
+                <div class="risk-player-rank">#{rank}</div>
+                <div class="risk-player-name">{row.get("Player", "Unknown")}</div>
+                <div class="risk-player-meta">
+                    {row.get("Team", "Unknown")} &middot; {row.get("Position", "N/A")}
+                </div>
+                <div class="small-label">Risk score</div>
+                <div class="risk-score-value">{score_text}</div>
+                <div style="margin-top: 8px;">
+                    {badge(tier_text, "warn" if tier_text != "N/A" else "neutral")}
+                    {badge(str(source), "good" if row.get("ProfileMatched") else "bad")}
+                </div>
+            </div>
+            """
+        )
+    st.markdown(
+        f'<div class="risk-top-grid">{"".join(cards)}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_live_player_risk_results(live_risks, fetch_missing_profiles):
+    counts = live_risks.attrs.get("profile_counts", {})
+    count_left, count_right = st.columns(2, gap="medium")
+    with count_left:
+        c1, c2 = st.columns(2, gap="small")
+        c1.metric("CSV Profiles", counts.get("csv", 0))
+        c2.metric("Cached API Profiles", counts.get("cache", 0))
+    with count_right:
+        c3, c4 = st.columns(2, gap="small")
+        c3.metric("Live API Profiles", counts.get("live_api", 0))
+        c4.metric("Unmatched", counts.get("unmatched", 0))
+
+    if fetch_missing_profiles:
+        st.caption(
+            f"API profile requests used this action: "
+            f"{live_risks.attrs.get('api_fetches', 0)} / 5"
+        )
+        for fetch_error in live_risks.attrs.get("fetch_errors", []):
+            st.warning(fetch_error)
+
+    matched_risks = live_risks[live_risks["ProfileMatched"]].copy()
+    unmatched_risks = live_risks[~live_risks["ProfileMatched"]].copy()
+
+    if matched_risks.empty:
+        st.warning(
+            "No confirmed starters matched data/player_profiles.csv. "
+            "No player risk scores are available for this fixture."
+        )
+    else:
+        st.markdown("#### Top Five Matched Starters")
+        st.caption(
+            "Highest-risk matched starters by RiskScore. "
+            "Tier and profile source are shown on each card."
+        )
+        render_top_matched_risk_cards(matched_risks)
+        if len(matched_risks) > 5:
+            with st.expander(f"Other matched starters ({len(matched_risks) - 5})"):
+                st.dataframe(
+                    format_live_risk_display(matched_risks.iloc[5:]),
+                    width="stretch",
+                    hide_index=True,
+                )
+
+    if not unmatched_risks.empty:
+        with st.expander(f"Unmatched starters ({len(unmatched_risks)})"):
+            st.caption(
+                "These players were not assigned a risk score because no "
+                "matching player-and-team profile was found. RiskScore is N/A."
+            )
+            st.dataframe(
+                format_live_risk_display(unmatched_risks),
+                width="stretch",
+                hide_index=True,
+            )
+
+
 def render_live_match_builder():
     section_header(
         "Live Match Builder",
-        "Select a date, league, and fixture to retrieve match details, "
-        "referee information, and confirmed lineups automatically.",
+        "Work through selection, context, prediction, value, and player risk "
+        "in order. Backend calls and keys are unchanged.",
         kicker="Live workflow",
         featured=True,
+    )
+
+    workflow_stage(
+        1,
+        "Select Match",
+        "Choose a test fixture or pick a live date, league, and fixture.",
     )
 
     use_test_fixture = st.checkbox(
@@ -1192,44 +1582,18 @@ def render_live_match_builder():
     lineup_rows = fixture_data.get("lineups", [])
     lineups_available = fixture_data.get("lineups_available", False)
 
-    section_header("Match Details", kicker="Fixture")
-
-    c1, c2, c3, c4 = st.columns(4, gap="small")
-    c1.metric("Home Team", fixture.get("home_team") or "Unknown")
-    c2.metric("Away Team", fixture.get("away_team") or "Unknown")
-    c3.metric("League", fixture.get("league") or "Unknown")
-    c4.metric("Status", fixture.get("status") or "Unknown")
-
-    referee_badge = (
-        badge("REFEREE LOADED", "good")
-        if referee
-        else badge("NO REFEREE YET", "warn")
+    workflow_stage(
+        2,
+        "Match Context",
+        "Fixture identity, schedule metadata, referee status, and lineup availability.",
     )
-    lineup_badge = (
-        badge("LINEUPS CONFIRMED", "good")
-        if lineups_available
-        else badge("LINEUPS NOT RELEASED", "warn")
-    )
+    render_match_context_panel(fixture, referee, lineups_available)
 
-    st.markdown(
-        f"""
-        <div class="panel panel-accent">
-            <div class="small-label">Selected Fixture</div>
-            <h3 style="margin: 6px 0 10px;">{fixture.get("home_team", "Unknown")} vs {fixture.get("away_team", "Unknown")}</h3>
-            <div style="margin-top: 8px;">
-                {referee_badge}
-                {lineup_badge}
-            </div>
-            <div class="reason-box">
-                <b>Referee:</b> {referee or "Not assigned or not yet available"}<br>
-                <b>Kickoff:</b> {fixture.get("date") or "Unknown"}<br>
-                <b>Country:</b> {fixture.get("country") or "Unknown"}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    workflow_stage(
+        3,
+        "Match Prediction",
+        "Generate the live model output for this fixture.",
     )
-
     if st.button(
         "Generate Match Prediction",
         type="primary",
@@ -1245,19 +1609,12 @@ def render_live_match_builder():
 
     prediction = st.session_state.get("live_prediction")
     if prediction and prediction.get("fixture_id") == fixture_id:
-        section_header(
-            "Match Prediction",
-            "Model output for the selected fixture.",
-            kicker="Live model",
-            featured=True,
-        )
         render_live_prediction_summary(prediction)
 
-        section_header(
+        workflow_stage(
+            4,
             "Card Market Value",
-            "Compare model probabilities against verified card-market odds.",
-            kicker="Betting value",
-            featured=True,
+            "Verify card-market odds, compare sides, and optionally save the pick.",
         )
         st.warning(
             "Entered odds must be for total match cards Over/Under 4.5, not goals. "
@@ -1362,6 +1719,12 @@ def render_live_match_builder():
                                     "in Prediction History."
                                 )
 
+    workflow_stage(
+        5,
+        "Confirmed Lineups and Player Risk",
+        "Review confirmed squads, then score starters once a prediction exists.",
+    )
+
     if not lineups_available or not lineup_rows:
         st.info(
             "Confirmed lineups are not available yet. "
@@ -1377,71 +1740,28 @@ def render_live_match_builder():
         lineup_dataframe["lineup_type"] == "Substitute"
     ].copy()
 
-    section_header("Confirmed Lineups", kicker="Squads")
-
     home_team = fixture.get("home_team")
     away_team = fixture.get("away_team")
     home_column, away_column = st.columns(2, gap="medium")
 
     with home_column:
-        st.markdown(f"#### {home_team}")
-        home_starters = starters[starters["team"] == home_team]
-        if home_starters.empty:
-            st.info("No starters available.")
-        else:
-            st.dataframe(
-                home_starters[
-                    ["number", "player", "position", "formation", "grid"]
-                ],
-                width="stretch",
-                hide_index=True,
-            )
-
-        st.markdown("##### Substitutes")
-        home_substitutes = substitutes[substitutes["team"] == home_team]
-        if home_substitutes.empty:
-            st.info("No substitutes available.")
-        else:
-            st.dataframe(
-                home_substitutes[
-                    ["number", "player", "position"]
-                ],
-                width="stretch",
-                hide_index=True,
-            )
+        render_team_lineup(
+            home_team,
+            starters[starters["team"] == home_team],
+            substitutes[substitutes["team"] == home_team],
+        )
 
     with away_column:
-        st.markdown(f"#### {away_team}")
-        away_starters = starters[starters["team"] == away_team]
-        if away_starters.empty:
-            st.info("No starters available.")
-        else:
-            st.dataframe(
-                away_starters[
-                    ["number", "player", "position", "formation", "grid"]
-                ],
-                width="stretch",
-                hide_index=True,
-            )
+        render_team_lineup(
+            away_team,
+            starters[starters["team"] == away_team],
+            substitutes[substitutes["team"] == away_team],
+        )
 
-        st.markdown("##### Substitutes")
-        away_substitutes = substitutes[substitutes["team"] == away_team]
-        if away_substitutes.empty:
-            st.info("No substitutes available.")
-        else:
-            st.dataframe(
-                away_substitutes[
-                    ["number", "player", "position"]
-                ],
-                width="stretch",
-                hide_index=True,
-            )
-
-    section_header(
-        "Live Player Card Risk",
+    st.markdown("#### Live Player Card Risk")
+    st.caption(
         "CSV profiles are used first. Fetching is manual and limited to "
-        "5 unmatched starters per action.",
-        kicker="Player risk",
+        "5 unmatched starters per action."
     )
     if not prediction or prediction.get("fixture_id") != fixture_id:
         st.info(
@@ -1466,56 +1786,7 @@ def render_live_match_builder():
         st.error(f"Could not load player profile cache: {error}")
         return
 
-    counts = live_risks.attrs.get("profile_counts", {})
-    source_columns = st.columns(4, gap="small")
-    source_columns[0].metric("CSV Profiles", counts.get("csv", 0))
-    source_columns[1].metric("Cached API Profiles", counts.get("cache", 0))
-    source_columns[2].metric("Live API Profiles", counts.get("live_api", 0))
-    source_columns[3].metric("Unmatched", counts.get("unmatched", 0))
-
-    if fetch_missing_profiles:
-        st.caption(
-            f"API profile requests used this action: "
-            f"{live_risks.attrs.get('api_fetches', 0)} / 5"
-        )
-        for fetch_error in live_risks.attrs.get("fetch_errors", []):
-            st.warning(fetch_error)
-    matched_risks = live_risks[live_risks["ProfileMatched"]].copy()
-    unmatched_risks = live_risks[~live_risks["ProfileMatched"]].copy()
-
-    if matched_risks.empty:
-        st.warning(
-            "No confirmed starters matched data/player_profiles.csv. "
-            "No player risk scores are available for this fixture."
-        )
-    else:
-        st.markdown("#### Top Five Matched Starters")
-        st.dataframe(
-            matched_risks.head(5),
-            width="stretch",
-            hide_index=True,
-        )
-        if len(matched_risks) > 5:
-            with st.expander("Other matched starters"):
-                st.dataframe(
-                    matched_risks.iloc[5:],
-                    width="stretch",
-                    hide_index=True,
-                )
-
-    if not unmatched_risks.empty:
-        with st.expander(
-            f"Unmatched starters ({len(unmatched_risks)})"
-        ):
-            st.caption(
-                "These players were not assigned a risk score because no "
-                "matching player-and-team profile was found."
-            )
-            st.dataframe(
-                unmatched_risks,
-                width="stretch",
-                hide_index=True,
-            )
+    render_live_player_risk_results(live_risks, fetch_missing_profiles)
 
 predictions, top_bets, ultra_top_bets = load_data()
 
