@@ -1,4 +1,4 @@
-import pandas as pd
+﻿import pandas as pd
 import streamlit as st
 from datetime import date
 
@@ -67,7 +67,7 @@ TEST_LIVE_LINEUPS = [
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Wesley Fofana", "number": 29, "position": "D", "grid": "2:2"},
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Levi Colwill", "number": 6, "position": "D", "grid": "2:3"},
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Marc Cucurella", "number": 3, "position": "D", "grid": "2:4"},
-    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Moisés Caicedo", "number": 25, "position": "M", "grid": "3:1"},
+    {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Mois├⌐s Caicedo", "number": 25, "position": "M", "grid": "3:1"},
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Enzo Fernandez", "number": 8, "position": "M", "grid": "3:2"},
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Pedro Neto", "number": 7, "position": "M", "grid": "4:1"},
     {"team": "Chelsea", "formation": "4-2-3-1", "lineup_type": "Starter", "player": "Cole Palmer", "number": 20, "position": "M", "grid": "4:2"},
@@ -328,7 +328,7 @@ def match_card(row):
     with top_left:
         st.markdown(
             f"""
-            <div class="small-label">{row.get('Div', '')} · {row['Date'].strftime('%m/%d/%Y')}</div>
+            <div class="small-label">{row.get('Div', '')} ┬╖ {row['Date'].strftime('%m/%d/%Y')}</div>
             <h3 style="margin-top: 6px;">{row['HomeTeam']} vs {row['AwayTeam']}</h3>
             {badge(signal, signal_kind)} {badge(confidence, confidence_kind)} {badge('VALUE: ' + value_bet, value_kind)}
             <div style="margin-top: 10px;">{data_source_badges(row)}</div>
@@ -385,6 +385,60 @@ def match_card(row):
     )
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_match_list(rows, empty_message):
+    if rows.empty:
+        st.info(empty_message)
+        return
+
+    for _, row in rows.iterrows():
+        match_card(row)
+
+
+def render_predictions_hub(predictions, top_bets, ultra_top_bets, high_conf, missing_ref):
+    st.subheader("Predictions")
+    st.caption(
+        "Browse upcoming matches by signal quality. Filters only change what is shown — "
+        "prediction logic and source data are unchanged."
+    )
+
+    view = st.radio(
+        "Prediction view",
+        [
+            "Top Bets",
+            "Ultra Value",
+            "With Ref Data",
+            "Without Ref Data",
+            "All Predictions",
+        ],
+        horizontal=True,
+        key="predictions_view",
+    )
+
+    if view == "Top Bets":
+        st.subheader("Top Bets")
+        render_match_list(
+            top_bets,
+            "No top bets available for today or future matches.",
+        )
+    elif view == "Ultra Value":
+        render_ultra_value(ultra_top_bets)
+    elif view == "With Ref Data":
+        st.subheader("Matches With Referee Data")
+        render_match_list(high_conf, "No high-confidence matches available.")
+    elif view == "Without Ref Data":
+        st.subheader("Matches Without Referee Data")
+        st.caption(
+            "These matches are shown separately because the model is using fallback average referee values."
+        )
+        if missing_ref.empty:
+            st.success("No matches are missing referee data.")
+        else:
+            render_match_list(missing_ref, "No matches are missing referee data.")
+    else:
+        st.subheader("All Upcoming Predictions")
+        st.dataframe(predictions, use_container_width=True)
 
 
 def render_bet_tracker():
@@ -1042,71 +1096,49 @@ referee_supported_count = int(
     predictions["Referee"].apply(lambda value: not is_missing_referee(value)).sum()
 )
 
-m1, m2, m3, m4, m5 = st.columns(5)
-m1.metric("Upcoming Matches", len(predictions))
-m2.metric("High Confidence", len(high_conf))
-m3.metric("Missing Ref Data", len(missing_ref))
-m4.metric("Top Bets", len(top_bets))
-m5.metric("Ultra Value", len(ultra_top_bets))
+st.caption(
+    f"Overview · {len(predictions)} upcoming · {len(high_conf)} high confidence · "
+    f"{len(missing_ref)} missing ref · {len(top_bets)} top bets · "
+    f"{len(ultra_top_bets)} ultra value"
+)
 
-s1, s2, s3, s4 = st.columns(4)
-s1.metric("API Odds Fixtures", api_odds_count)
-s2.metric("Manual Odds Fixtures", manual_odds_count)
-s3.metric("Default Odds Fixtures", default_odds_count)
-s4.metric("Referee-Supported Fixtures", referee_supported_count)
+with st.expander("Overview metrics", expanded=False):
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric("Upcoming Matches", len(predictions))
+    m2.metric("High Confidence", len(high_conf))
+    m3.metric("Missing Ref Data", len(missing_ref))
+    m4.metric("Top Bets", len(top_bets))
+    m5.metric("Ultra Value", len(ultra_top_bets))
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
+    s1, s2, s3, s4 = st.columns(4)
+    s1.metric("API Odds Fixtures", api_odds_count)
+    s2.metric("Manual Odds Fixtures", manual_odds_count)
+    s3.metric("Default Odds Fixtures", default_odds_count)
+    s4.metric("Referee-Supported Fixtures", referee_supported_count)
+
+tab_live, tab_predictions, tab_history, tab_players = st.tabs(
     [
-        "Top Bets",
-        "Ultra Value",
-        "With Ref Data",
-        "Without Ref Data",
-        "All Predictions",
+        "Live Match Builder",
+        "Predictions",
         "Prediction History",
         "Player Card Risk",
-        "Live Match Builder",
     ]
 )
 
-with tab1:
-    st.subheader("Top Bets")
-    if top_bets.empty:
-        st.info("No top bets available for today or future matches.")
-    else:
-        for _, row in top_bets.iterrows():
-            match_card(row)
+with tab_live:
+    render_live_match_builder()
 
-with tab2:
-    render_ultra_value(ultra_top_bets)
-
-with tab3:
-    st.subheader("Matches With Referee Data")
-    if high_conf.empty:
-        st.info("No high-confidence matches available.")
-    else:
-        for _, row in high_conf.iterrows():
-            match_card(row)
-
-with tab4:
-    st.subheader("Matches Without Referee Data")
-    st.caption(
-        "These matches are shown separately because the model is using fallback average referee values."
+with tab_predictions:
+    render_predictions_hub(
+        predictions,
+        top_bets,
+        ultra_top_bets,
+        high_conf,
+        missing_ref,
     )
-    if missing_ref.empty:
-        st.success("No matches are missing referee data.")
-    else:
-        for _, row in missing_ref.iterrows():
-            match_card(row)
 
-with tab5:
-    st.subheader("All Upcoming Predictions")
-    st.dataframe(predictions, use_container_width=True)
-
-with tab6:
+with tab_history:
     render_bet_tracker()
 
-with tab7:
+with tab_players:
     render_player_card_risk()
-
-with tab8:
-    render_live_match_builder()
