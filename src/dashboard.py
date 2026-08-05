@@ -235,9 +235,143 @@ st.markdown(
         background: linear-gradient(180deg, var(--yc-surface), var(--yc-surface-soft));
         border: 1px solid var(--yc-border);
         border-radius: 18px;
-        padding: 1.15rem 1.25rem 1rem;
-        margin-bottom: 1rem;
+        padding: 1.15rem 1.25rem 0.85rem;
+        margin-bottom: 0.85rem;
         box-shadow: var(--yc-shadow);
+    }
+
+    .match-card-top {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+        gap: 1rem 1.25rem;
+        align-items: start;
+    }
+
+    .match-card-title {
+        font-family: var(--yc-font-display);
+        color: var(--yc-heading);
+        font-size: clamp(1.15rem, 2.2vw, 1.35rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 4px 0 10px;
+        line-height: 1.2;
+    }
+
+    .match-card-meta {
+        margin-top: 0.55rem;
+    }
+
+    .match-ref-name {
+        font-size: 1.02rem;
+        font-weight: 600;
+        color: var(--yc-heading);
+        margin-top: 4px;
+        line-height: 1.35;
+    }
+
+    .match-metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-top: 0.95rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid var(--yc-border);
+    }
+
+    .match-metric {
+        background: rgba(2, 6, 23, 0.35);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        border-radius: 12px;
+        padding: 12px 14px;
+    }
+
+    .featured-prediction {
+        margin-top: 0.35rem;
+    }
+
+    .featured-metric-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-top: 0.85rem;
+    }
+
+    .featured-metric {
+        background: rgba(2, 6, 23, 0.45);
+        border: 1px solid rgba(56, 189, 248, 0.18);
+        border-radius: 12px;
+        padding: 14px 16px;
+    }
+
+    .featured-metric .big-number {
+        font-size: clamp(1.45rem, 3vw, 1.95rem);
+    }
+
+    .recommend-panel {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(6, 78, 59, 0.22));
+        border: 1px solid rgba(34, 197, 94, 0.35);
+        border-radius: var(--yc-radius);
+        padding: 1.15rem 1.25rem 1.05rem;
+        margin: 0.75rem 0 1rem;
+        box-shadow: var(--yc-shadow);
+    }
+
+    .recommend-title {
+        font-family: var(--yc-font-display);
+        color: var(--yc-heading);
+        font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+        font-weight: 700;
+        margin: 4px 0 0.85rem;
+    }
+
+    .side-compare-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin: 0.5rem 0 0.85rem;
+    }
+
+    .side-card {
+        background: var(--yc-surface-soft);
+        border: 1px solid var(--yc-border);
+        border-radius: 14px;
+        padding: 14px 16px;
+    }
+
+    .side-card.recommended {
+        border-color: rgba(34, 197, 94, 0.4);
+        box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.12);
+    }
+
+    .side-card-title {
+        font-family: var(--yc-font-display);
+        font-weight: 700;
+        color: var(--yc-heading);
+        margin-bottom: 0.65rem;
+    }
+
+    .side-stat-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.28rem 0;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        font-size: 0.9rem;
+        color: #cbd5e1;
+    }
+
+    .side-stat-row:last-child {
+        border-bottom: none;
+    }
+
+    .side-stat-label {
+        color: var(--yc-muted);
+    }
+
+    .side-stat-value {
+        font-weight: 600;
+        color: var(--yc-heading);
+        text-align: right;
     }
 
     .badge {
@@ -378,6 +512,16 @@ st.markdown(
         background: var(--yc-surface-soft);
     }
 
+    @media (max-width: 900px) {
+        .match-metric-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .featured-metric-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     @media (max-width: 768px) {
         .block-container {
             padding-left: 0.85rem;
@@ -386,9 +530,15 @@ st.markdown(
         }
 
         .match-card,
-        .panel {
+        .panel,
+        .recommend-panel {
             padding: 0.95rem 1rem;
             border-radius: 14px;
+        }
+
+        .match-card-top,
+        .side-compare-grid {
+            grid-template-columns: 1fr;
         }
 
         .big-number {
@@ -528,6 +678,24 @@ def section_header(title, subtitle=None, kicker=None, featured=False):
     )
 
 
+def match_metric_html(label, value, css_class="match-metric"):
+    return (
+        f"<div class='{css_class}'>"
+        f"<div class='small-label'>{label}</div>"
+        f"<div class='big-number'>{value}</div>"
+        f"</div>"
+    )
+
+
+def side_stat_html(label, value):
+    return (
+        f"<div class='side-stat-row'>"
+        f"<span class='side-stat-label'>{label}</span>"
+        f"<span class='side-stat-value'>{value}</span>"
+        f"</div>"
+    )
+
+
 def match_card(row):
     confidence = str(row.get("confidence", ""))
     signal = str(row.get("signal", ""))
@@ -542,72 +710,164 @@ def match_card(row):
     signal_kind = "good" if "STRONG" in signal else "neutral"
     value_kind = "good" if value_bet == "YES" else "bad"
 
-    st.markdown("<div class='match-card'>", unsafe_allow_html=True)
-
-    top_left, top_right = st.columns([2.4, 1], gap="medium")
-
-    with top_left:
-        st.markdown(
-            f"""
-            <div class="small-label">{row.get('Div', '')} &middot; {row['Date'].strftime('%m/%d/%Y')}</div>
-            <h3 style="margin: 4px 0 10px; font-size: 1.35rem;">{row['HomeTeam']} vs {row['AwayTeam']}</h3>
-            <div>{badge(signal, signal_kind)} {badge(confidence, confidence_kind)} {badge('VALUE: ' + value_bet, value_kind)}</div>
-            <div style="margin-top: 8px;">{data_source_badges(row)}</div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with top_right:
-        st.markdown(
-            f"""
-            <div class="small-label">Referee</div>
-            <div style="font-size:1.05rem;font-weight:600;color:var(--yc-heading);margin-top:4px;line-height:1.35;">
-                {referee_display(row.get('Referee'))}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    c1, c2, c3, c4 = st.columns(4, gap="small")
-
-    with c1:
-        st.markdown(
-            f"<div class='metric-card'><div class='small-label'>Predicted Cards</div><div class='big-number'>{fmt_num(row['predicted_cards'])}</div></div>",
-            unsafe_allow_html=True,
-        )
-
-    with c2:
-        st.markdown(
-            f"<div class='metric-card'><div class='small-label'>Under 4.5 Model Prob</div><div class='big-number'>{fmt_pct(row.get('under_model_prob'))}</div></div>",
-            unsafe_allow_html=True,
-        )
-
-    with c3:
-        st.markdown(
-            f"<div class='metric-card'><div class='small-label'>Book Prob</div><div class='big-number'>{fmt_pct(row.get('under_book_prob'))}</div></div>",
-            unsafe_allow_html=True,
-        )
-
-    with c4:
-        st.markdown(
-            f"<div class='metric-card'><div class='small-label'>Value Edge</div><div class='big-number'>{fmt_pct(row.get('value_edge'))}</div></div>",
-            unsafe_allow_html=True,
-        )
+    match_label = f"{row['HomeTeam']} vs {row['AwayTeam']}"
+    date_text = row["Date"].strftime("%m/%d/%Y")
+    league_text = row.get("Div", "") or ""
 
     st.markdown(
         f"""
-        <div class="reason-box">
-            <b>Reasoning</b><br>
-            Ref average cards: {fmt_num(row.get("avg_total_cards"))}<br>
-            Ref over 4.5 rate: {fmt_pct(row.get("over_4_5_rate"))}<br>
-            Model over 4.5 probability: {fmt_pct(row.get("over_4_5_prob"))}<br>
-            Edge vs 4.5 line: {fmt_num(row.get("edge"))}
+        <div class="match-card">
+            <div class="match-card-top">
+                <div>
+                    <div class="small-label">{league_text} &middot; {date_text}</div>
+                    <div class="match-card-title">{match_label}</div>
+                    <div>
+                        {badge(signal, signal_kind)}
+                        {badge(confidence, confidence_kind)}
+                        {badge('VALUE: ' + value_bet, value_kind)}
+                    </div>
+                </div>
+                <div>
+                    <div class="small-label">Referee</div>
+                    <div class="match-ref-name">{referee_display(row.get('Referee'))}</div>
+                    <div class="match-card-meta">{data_source_badges(row)}</div>
+                </div>
+            </div>
+            <div class="match-metric-grid">
+                {match_metric_html('Predicted Cards', fmt_num(row['predicted_cards']))}
+                {match_metric_html('Under 4.5 Model Prob', fmt_pct(row.get('under_model_prob')))}
+                {match_metric_html('Book Prob', fmt_pct(row.get('under_book_prob')))}
+                {match_metric_html('Value Edge', fmt_pct(row.get('value_edge')))}
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    with st.expander(f"Reasoning & details · {match_label}", expanded=False):
+        st.markdown(
+            f"""
+            <div class="reason-box">
+                <b>Reasoning</b><br>
+                Ref average cards: {fmt_num(row.get("avg_total_cards"))}<br>
+                Ref over 4.5 rate: {fmt_pct(row.get("over_4_5_rate"))}<br>
+                Model over 4.5 probability: {fmt_pct(row.get("over_4_5_prob"))}<br>
+                Edge vs 4.5 line: {fmt_num(row.get("edge"))}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_live_prediction_summary(prediction):
+    st.markdown(
+        f"""
+        <div class="panel panel-accent featured-prediction">
+            <div class="small-label">Live model output</div>
+            <div class="featured-metric-grid">
+                {match_metric_html('Predicted Cards', fmt_num(prediction['predicted_cards']), 'featured-metric')}
+                {match_metric_html('Over 4.5 Probability', fmt_pct(prediction['over_4_5_probability']), 'featured-metric')}
+                {match_metric_html('Under 4.5 Probability', fmt_pct(prediction['under_4_5_probability']), 'featured-metric')}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    profile_found = prediction["referee_profile_found"]
+    profile_badge = (
+        badge("REFEREE PROFILE FOUND", "good")
+        if profile_found
+        else badge("LEAGUE AVERAGE PROFILE", "warn")
+    )
+    referee_name = prediction.get("referee_model") or "No referee assigned"
+
+    with st.expander("Referee profile & team mapping", expanded=False):
+        st.markdown(
+            f"""
+            <div class="reason-box">
+                <div style="margin-bottom: 10px;">{profile_badge}</div>
+                <b>Referee profile status:</b> {referee_name}<br>
+                <b>Historical team mapping:</b><br>
+                {prediction["home_team_api"]} &rarr; {prediction["home_team_model"]}<br>
+                {prediction["away_team_api"]} &rarr; {prediction["away_team_model"]}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_betting_value_sides(value, stake):
+    sides = value.get("sides") or {}
+    recommendation = value.get("recommendation")
+
+    if recommendation and recommendation in sides:
+        metrics = sides[recommendation]
+        st.markdown(
+            f"""
+            <div class="recommend-panel">
+                <div class="small-label">Recommended side</div>
+                <div class="recommend-title">{recommendation}</div>
+                <div class="featured-metric-grid">
+                    {match_metric_html('Model Prob', fmt_pct(metrics['model_probability']), 'featured-metric')}
+                    {match_metric_html('Edge', fmt_pct(metrics['probability_edge']), 'featured-metric')}
+                    {match_metric_html('Expected Value', fmt_pct(metrics['expected_value_per_unit']), 'featured-metric')}
+                </div>
+                <div class="reason-box">
+                    Decimal odds: {metrics['decimal_odds']:.2f}<br>
+                    No-vig market probability: {fmt_pct(metrics['no_vig_implied_probability'])}<br>
+                    Expected profit ({stake:g} stake): {metrics['expected_profit']:+.2f}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.info("No positive EV")
+
+    side_cards = []
+    for side_name, metrics in sides.items():
+        recommended_class = " recommended" if side_name == recommendation else ""
+        side_cards.append(
+            f"""
+            <div class="side-card{recommended_class}">
+                <div class="side-card-title">{side_name}</div>
+                {side_stat_html('Model Probability', fmt_pct(metrics['model_probability']))}
+                {side_stat_html('Decimal Odds', f"{metrics['decimal_odds']:.2f}")}
+                {side_stat_html('No-Vig Market Prob', fmt_pct(metrics['no_vig_implied_probability']))}
+                {side_stat_html('Edge', fmt_pct(metrics['probability_edge']))}
+                {side_stat_html('Expected Value', fmt_pct(metrics['expected_value_per_unit']))}
+                {side_stat_html(f'Expected Profit ({stake:g})', f"{metrics['expected_profit']:+.2f}")}
+            </div>
+            """
+        )
+
+    if side_cards:
+        st.markdown(
+            f'<div class="side-compare-grid">{"".join(side_cards)}</div>',
+            unsafe_allow_html=True,
+        )
+
+    rows = []
+    for side, metrics in sides.items():
+        rows.append(
+            {
+                "Side": side,
+                "Model Probability": fmt_pct(metrics["model_probability"]),
+                "Decimal Odds": f"{metrics['decimal_odds']:.2f}",
+                "No-Vig Market Probability": fmt_pct(
+                    metrics["no_vig_implied_probability"]
+                ),
+                "Edge": fmt_pct(metrics["probability_edge"]),
+                "Expected Value": fmt_pct(metrics["expected_value_per_unit"]),
+                f"Expected Profit ({stake:g} stake)": (
+                    f"{metrics['expected_profit']:+.2f}"
+                ),
+            }
+        )
+    if rows:
+        with st.expander("Full value table", expanded=False):
+            st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
 
 
 def render_match_list(rows, empty_message):
@@ -991,47 +1251,7 @@ def render_live_match_builder():
             kicker="Live model",
             featured=True,
         )
-
-        p1, p2, p3 = st.columns(3, gap="small")
-        p1.metric(
-            "Predicted Total Cards",
-            fmt_num(prediction["predicted_cards"]),
-        )
-        p2.metric(
-            "Over 4.5 Probability",
-            fmt_pct(prediction["over_4_5_probability"]),
-        )
-        p3.metric(
-            "Under 4.5 Probability",
-            fmt_pct(prediction["under_4_5_probability"]),
-        )
-
-        profile_found = prediction["referee_profile_found"]
-        profile_badge = (
-            badge("REFEREE PROFILE FOUND", "good")
-            if profile_found
-            else badge("LEAGUE AVERAGE PROFILE", "warn")
-        )
-        referee_name = (
-            prediction.get("referee_model")
-            or "No referee assigned"
-        )
-
-        st.markdown(
-            f"""
-            <div class="panel panel-accent">
-                <div class="small-label">Prediction Inputs</div>
-                <div style="margin: 10px 0 12px;">{profile_badge}</div>
-                <div class="reason-box">
-                    <b>Referee profile status:</b> {referee_name}<br>
-                    <b>Historical team mapping:</b><br>
-                    {prediction["home_team_api"]} &rarr; {prediction["home_team_model"]}<br>
-                    {prediction["away_team_api"]} &rarr; {prediction["away_team_model"]}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        render_live_prediction_summary(prediction)
 
         section_header(
             "Card Market Value",
@@ -1117,31 +1337,9 @@ def render_live_match_builder():
                     "Bookmaker margin / overround: "
                     f"{fmt_pct(value['bookmaker_margin'])}"
                 )
-                rows = []
-                for side, metrics in value["sides"].items():
-                    rows.append(
-                        {
-                            "Side": side,
-                            "Model Probability": fmt_pct(metrics["model_probability"]),
-                            "Decimal Odds": f"{metrics['decimal_odds']:.2f}",
-                            "No-Vig Market Probability": fmt_pct(
-                                metrics["no_vig_implied_probability"]
-                            ),
-                            "Edge": fmt_pct(metrics["probability_edge"]),
-                            "Expected Value": fmt_pct(
-                                metrics["expected_value_per_unit"]
-                            ),
-                            f"Expected Profit ({stake:g} stake)": (
-                                f"{metrics['expected_profit']:+.2f}"
-                            ),
-                        }
-                    )
-                st.dataframe(
-                    pd.DataFrame(rows), width="stretch", hide_index=True
-                )
+                render_betting_value_sides(value, stake)
                 recommendation = value["recommendation"]
                 if recommendation:
-                    st.success(f"Recommendation: {recommendation}")
                     if st.button(
                         "Save to Prediction History",
                         key=f"save_live_prediction_{fixture_id}",
@@ -1163,8 +1361,6 @@ def render_live_match_builder():
                                     "This fixture, pick, and line already exist "
                                     "in Prediction History."
                                 )
-                else:
-                    st.info("No positive EV")
 
     if not lineups_available or not lineup_rows:
         st.info(
