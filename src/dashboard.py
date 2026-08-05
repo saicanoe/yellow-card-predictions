@@ -1,6 +1,7 @@
 ﻿import pandas as pd
 import streamlit as st
 from datetime import date
+from html import escape as html_escape
 
 from live_predictor import (
     LivePredictionError,
@@ -48,6 +49,9 @@ TEST_LIVE_FIXTURE = {
     "home_team": "Arsenal",
     "away_team_id": 49,
     "away_team": "Chelsea",
+    "home_team_logo": "https://media.api-sports.io/football/teams/42.png",
+    "away_team_logo": "https://media.api-sports.io/football/teams/49.png",
+    "league_logo": "https://media.api-sports.io/football/leagues/39.png",
 }
 
 TEST_LIVE_LINEUPS = [
@@ -510,6 +514,287 @@ st.markdown(
         line-height: 1.1;
     }
 
+    .match-hero {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.92));
+        border: 1px solid var(--yc-border);
+        border-radius: 18px;
+        padding: 1.25rem 1.2rem 1.1rem;
+        margin-bottom: 0.85rem;
+        box-shadow: var(--yc-shadow);
+    }
+
+    .match-hero-competition {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin-bottom: 1rem;
+        color: var(--yc-muted);
+        font-size: 0.86rem;
+        font-weight: 600;
+    }
+
+    .match-hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 0.85rem;
+        align-items: center;
+    }
+
+    .match-hero-team {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.55rem;
+        min-width: 0;
+    }
+
+    .match-hero-team.away {
+        order: 3;
+    }
+
+    .match-hero-vs {
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--yc-muted);
+        font-family: var(--yc-font-display);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+    }
+
+    .match-hero-vs-mark {
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 999px;
+        border: 1px solid var(--yc-border-strong);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(2, 6, 23, 0.65);
+        color: var(--yc-heading);
+        font-size: 0.85rem;
+    }
+
+    .match-hero-team-name {
+        font-family: var(--yc-font-display);
+        color: var(--yc-heading);
+        font-size: clamp(1rem, 2.4vw, 1.25rem);
+        font-weight: 700;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .club-badge {
+        position: relative;
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--yc-border);
+        background: rgba(2, 6, 23, 0.75);
+        flex-shrink: 0;
+    }
+
+    .club-badge.sm {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+    }
+
+    .club-badge-fallback {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--yc-font-display);
+        font-weight: 700;
+        color: var(--yc-accent);
+        background: linear-gradient(160deg, rgba(56, 189, 248, 0.16), rgba(15, 23, 42, 0.9));
+        font-size: 1rem;
+    }
+
+    .club-badge.sm .club-badge-fallback {
+        font-size: 0.65rem;
+    }
+
+    .club-badge img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 6px;
+        background: rgba(248, 250, 252, 0.92);
+    }
+
+    .match-card-vs-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 0.65rem;
+        align-items: center;
+        margin: 0.15rem 0 0.75rem;
+    }
+
+    .match-card-team {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        min-width: 0;
+    }
+
+    .match-card-team.away {
+        justify-content: flex-end;
+        text-align: right;
+    }
+
+    .match-card-team-name {
+        font-family: var(--yc-font-display);
+        font-weight: 700;
+        color: var(--yc-heading);
+        font-size: 1.05rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .match-card-vs-chip {
+        color: var(--yc-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+    }
+
+    .conf-pill {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin-right: 6px;
+        margin-bottom: 4px;
+        letter-spacing: 0.04em;
+    }
+
+    .conf-high {
+        background: rgba(34, 197, 94, 0.16);
+        color: #86efac;
+        border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .conf-caution {
+        background: rgba(245, 158, 11, 0.16);
+        color: #fcd34d;
+        border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .conf-low {
+        background: rgba(239, 68, 68, 0.16);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .tier-pill {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        margin-right: 4px;
+        margin-bottom: 4px;
+    }
+
+    .tier-high {
+        background: rgba(239, 68, 68, 0.16);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .tier-medium {
+        background: rgba(245, 158, 11, 0.16);
+        color: #fcd34d;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .tier-low {
+        background: rgba(34, 197, 94, 0.16);
+        color: #86efac;
+        border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+
+    .tier-unknown {
+        background: rgba(148, 163, 184, 0.12);
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+    }
+
+    .prob-stack {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 0.85rem;
+    }
+
+    .prob-row {
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .prob-row-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        font-size: 0.88rem;
+        color: #cbd5e1;
+        font-weight: 600;
+    }
+
+    .prob-track {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.16);
+        overflow: hidden;
+    }
+
+    .prob-fill {
+        height: 100%;
+        border-radius: 999px;
+    }
+
+    .prob-fill.over {
+        background: linear-gradient(90deg, #f97316, #fb7185);
+    }
+
+    .prob-fill.under {
+        background: linear-gradient(90deg, #22d3ee, #38bdf8);
+    }
+
+    .prob-fill.model {
+        background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+    }
+
+    .prob-fill.market {
+        background: linear-gradient(90deg, #94a3b8, #64748b);
+    }
+
+    .empty-state {
+        border: 1px dashed var(--yc-border-strong);
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        background: rgba(15, 23, 42, 0.45);
+        color: var(--yc-muted);
+        margin: 0.35rem 0 0.75rem;
+    }
+
+    .empty-state-title {
+        color: var(--yc-heading);
+        font-family: var(--yc-font-display);
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+
     .history-summary-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -743,8 +1028,25 @@ st.markdown(
         .context-meta-grid,
         .risk-top-grid,
         .history-summary-grid,
-        .history-projected-grid {
+        .history-projected-grid,
+        .match-hero-grid,
+        .match-card-vs-row {
             grid-template-columns: 1fr;
+        }
+
+        .match-hero-team.away,
+        .match-hero-vs {
+            order: initial;
+        }
+
+        .match-card-team.away {
+            justify-content: flex-start;
+            text-align: left;
+        }
+
+        .club-badge {
+            width: 56px;
+            height: 56px;
         }
 
         .big-number,
@@ -853,7 +1155,108 @@ def referee_display(value) -> str:
 
 
 def badge(text, kind="neutral"):
-    return f"<span class='badge {kind}'>{text}</span>"
+    return f"<span class='badge {kind}'>{html_escape(str(text))}</span>"
+
+
+def confidence_pill(confidence_value):
+    text = str(confidence_value or "").strip()
+    upper = text.upper()
+    if "HIGH" in upper:
+        label, kind = "HIGH", "conf-high"
+    elif "LOW" in upper or "NO REF" in upper:
+        label, kind = "LOW", "conf-low"
+    else:
+        label, kind = "CAUTION", "conf-caution"
+    return (
+        f"<span class='conf-pill {kind}' title='{html_escape(text)}'>"
+        f"{label}</span>"
+    )
+
+
+def risk_tier_pill(tier_value):
+    text = str(tier_value or "").strip()
+    if not text or text.upper() in {"NAN", "NONE", "N/A"}:
+        return "<span class='tier-pill tier-unknown'>N/A</span>"
+    upper = text.upper()
+    if "HIGH" in upper:
+        kind = "tier-high"
+    elif "MED" in upper or "MID" in upper:
+        kind = "tier-medium"
+    elif "LOW" in upper:
+        kind = "tier-low"
+    else:
+        kind = "tier-unknown"
+    return f"<span class='tier-pill {kind}'>{html_escape(text)}</span>"
+
+
+def team_initials(name):
+    parts = [part for part in str(name or "").replace("-", " ").split() if part]
+    if not parts:
+        return "?"
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return f"{parts[0][0]}{parts[-1][0]}".upper()
+
+
+def resolve_logo_url(explicit_url=None, entity_id=None, entity_kind="teams"):
+    if explicit_url and str(explicit_url).strip():
+        return str(explicit_url).strip()
+    if entity_id in (None, "", 0, "0"):
+        return None
+    try:
+        numeric_id = int(entity_id)
+    except (TypeError, ValueError):
+        return None
+    if numeric_id <= 0:
+        return None
+    return f"https://media.api-sports.io/football/{entity_kind}/{numeric_id}.png"
+
+
+def club_badge_html(name, logo_url=None, size="md"):
+    initials = html_escape(team_initials(name))
+    size_class = " sm" if size == "sm" else ""
+    image_html = ""
+    if logo_url:
+        safe_url = html_escape(logo_url, quote=True)
+        image_html = (
+            f"<img src='{safe_url}' alt='' "
+            f"onerror=\"this.style.display='none'\" loading='lazy' />"
+        )
+    return (
+        f"<div class='club-badge{size_class}'>"
+        f"<div class='club-badge-fallback'>{initials}</div>"
+        f"{image_html}"
+        f"</div>"
+    )
+
+
+def probability_bar_html(label, probability, fill_class):
+    try:
+        pct = max(0.0, min(100.0, float(probability) * 100.0))
+        label_value = f"{pct:.1f}%"
+    except (TypeError, ValueError):
+        pct = 0.0
+        label_value = "N/A"
+    return (
+        f"<div class='prob-row'>"
+        f"<div class='prob-row-head'>"
+        f"<span>{html_escape(label)}</span>"
+        f"<span>{label_value}</span>"
+        f"</div>"
+        f"<div class='prob-track'>"
+        f"<div class='prob-fill {fill_class}' style='width:{pct:.1f}%;'></div>"
+        f"</div>"
+        f"</div>"
+    )
+
+
+def empty_state_html(title, detail):
+    return (
+        f"<div class='empty-state'>"
+        f"<div class='empty-state-title'>{html_escape(title)}</div>"
+        f"<div>{html_escape(detail)}</div>"
+        f"</div>"
+    )
 
 
 def data_source_badges(row):
@@ -935,43 +1338,62 @@ def match_card(row):
     signal = str(row.get("signal", ""))
     value_bet = str(row.get("value_bet", ""))
 
-    if confidence == "HIGH CONFIDENCE":
-        confidence_kind = "good"
-    elif "no ref data" in confidence.lower():
-        confidence_kind = "bad"
-    else:
-        confidence_kind = "warn"
     signal_kind = "good" if "STRONG" in signal else "neutral"
     value_kind = "good" if value_bet == "YES" else "bad"
 
-    match_label = f"{row['HomeTeam']} vs {row['AwayTeam']}"
+    home_team = str(row.get("HomeTeam", "Unknown"))
+    away_team = str(row.get("AwayTeam", "Unknown"))
+    match_label = f"{home_team} vs {away_team}"
     date_text = row["Date"].strftime("%m/%d/%Y")
     league_text = row.get("Div", "") or ""
+
+    home_logo = resolve_logo_url(
+        row.get("home_team_logo") or row.get("HomeTeamLogo"),
+        row.get("home_team_id") or row.get("HomeTeamId"),
+        "teams",
+    )
+    away_logo = resolve_logo_url(
+        row.get("away_team_logo") or row.get("AwayTeamLogo"),
+        row.get("away_team_id") or row.get("AwayTeamId"),
+        "teams",
+    )
 
     st.markdown(
         f"""
         <div class="match-card">
-            <div class="match-card-top">
-                <div>
-                    <div class="small-label">{league_text} &middot; {date_text}</div>
-                    <div class="match-card-title">{match_label}</div>
-                    <div>
-                        {badge(signal, signal_kind)}
-                        {badge(confidence, confidence_kind)}
-                        {badge('VALUE: ' + value_bet, value_kind)}
-                    </div>
+            <div class="small-label">{html_escape(str(league_text))} &middot; {date_text}</div>
+            <div class="match-card-vs-row">
+                <div class="match-card-team">
+                    {club_badge_html(home_team, home_logo, size="sm")}
+                    <div class="match-card-team-name">{html_escape(home_team)}</div>
                 </div>
-                <div>
-                    <div class="small-label">Referee</div>
-                    <div class="match-ref-name">{referee_display(row.get('Referee'))}</div>
-                    <div class="match-card-meta">{data_source_badges(row)}</div>
+                <div class="match-card-vs-chip">VS</div>
+                <div class="match-card-team away">
+                    <div class="match-card-team-name">{html_escape(away_team)}</div>
+                    {club_badge_html(away_team, away_logo, size="sm")}
                 </div>
             </div>
+            <div>
+                {badge(signal, signal_kind)}
+                {confidence_pill(confidence)}
+                {badge('VALUE: ' + value_bet, value_kind)}
+            </div>
+            <div class="match-card-meta" style="margin-top: 8px;">
+                <span class="small-label">Referee</span>
+                <span style="margin-left: 8px; color: var(--yc-heading); font-weight: 600;">
+                    {html_escape(referee_display(row.get('Referee')))}
+                </span>
+            </div>
+            <div class="match-card-meta">{data_source_badges(row)}</div>
             <div class="match-metric-grid">
                 {match_metric_html('Predicted Cards', fmt_num(row['predicted_cards']))}
                 {match_metric_html('Under 4.5 Model Prob', fmt_pct(row.get('under_model_prob')))}
                 {match_metric_html('Book Prob', fmt_pct(row.get('under_book_prob')))}
                 {match_metric_html('Value Edge', fmt_pct(row.get('value_edge')))}
+            </div>
+            <div class="prob-stack">
+                {probability_bar_html('Over 4.5 model', row.get('over_4_5_prob'), 'over')}
+                {probability_bar_html('Under 4.5 model', row.get('under_model_prob'), 'under')}
             </div>
         </div>
         """,
@@ -994,14 +1416,20 @@ def match_card(row):
 
 
 def render_live_prediction_summary(prediction):
+    over_prob = prediction["over_4_5_probability"]
+    under_prob = prediction["under_4_5_probability"]
     st.markdown(
         f"""
         <div class="panel panel-accent featured-prediction">
             <div class="small-label">Live model output</div>
             <div class="featured-metric-grid">
                 {match_metric_html('Predicted Cards', fmt_num(prediction['predicted_cards']), 'featured-metric')}
-                {match_metric_html('Over 4.5 Probability', fmt_pct(prediction['over_4_5_probability']), 'featured-metric')}
-                {match_metric_html('Under 4.5 Probability', fmt_pct(prediction['under_4_5_probability']), 'featured-metric')}
+                {match_metric_html('Over 4.5 Probability', fmt_pct(over_prob), 'featured-metric')}
+                {match_metric_html('Under 4.5 Probability', fmt_pct(under_prob), 'featured-metric')}
+            </div>
+            <div class="prob-stack">
+                {probability_bar_html('Over 4.5', over_prob, 'over')}
+                {probability_bar_html('Under 4.5', under_prob, 'under')}
             </div>
         </div>
         """,
@@ -1021,10 +1449,10 @@ def render_live_prediction_summary(prediction):
             f"""
             <div class="reason-box">
                 <div style="margin-bottom: 10px;">{profile_badge}</div>
-                <b>Referee profile status:</b> {referee_name}<br>
+                <b>Referee profile status:</b> {html_escape(str(referee_name))}<br>
                 <b>Historical team mapping:</b><br>
-                {prediction["home_team_api"]} &rarr; {prediction["home_team_model"]}<br>
-                {prediction["away_team_api"]} &rarr; {prediction["away_team_model"]}
+                {html_escape(str(prediction["home_team_api"]))} &rarr; {html_escape(str(prediction["home_team_model"]))}<br>
+                {html_escape(str(prediction["away_team_api"]))} &rarr; {html_escape(str(prediction["away_team_model"]))}
             </div>
             """,
             unsafe_allow_html=True,
@@ -1040,12 +1468,16 @@ def render_betting_value_sides(value, stake):
         st.markdown(
             f"""
             <div class="recommend-panel">
-                <div class="small-label">Recommended side</div>
-                <div class="recommend-title">{recommendation}</div>
+                <div class="small-label">Featured betting value</div>
+                <div class="recommend-title">{html_escape(str(recommendation))}</div>
                 <div class="featured-metric-grid">
                     {match_metric_html('Model Prob', fmt_pct(metrics['model_probability']), 'featured-metric')}
                     {match_metric_html('Edge', fmt_pct(metrics['probability_edge']), 'featured-metric')}
                     {match_metric_html('Expected Value', fmt_pct(metrics['expected_value_per_unit']), 'featured-metric')}
+                </div>
+                <div class="prob-stack">
+                    {probability_bar_html('Model probability', metrics['model_probability'], 'model')}
+                    {probability_bar_html('No-vig market probability', metrics['no_vig_implied_probability'], 'market')}
                 </div>
                 <div class="reason-box">
                     Decimal odds: {metrics['decimal_odds']:.2f}<br>
@@ -1057,7 +1489,13 @@ def render_betting_value_sides(value, stake):
             unsafe_allow_html=True,
         )
     else:
-        st.info("No positive EV")
+        st.markdown(
+            empty_state_html(
+                "No positive EV",
+                "Neither side currently shows a positive expected value at the entered odds.",
+            ),
+            unsafe_allow_html=True,
+        )
 
     side_cards = []
     for side_name, metrics in sides.items():
@@ -1065,13 +1503,17 @@ def render_betting_value_sides(value, stake):
         side_cards.append(
             f"""
             <div class="side-card{recommended_class}">
-                <div class="side-card-title">{side_name}</div>
+                <div class="side-card-title">{html_escape(str(side_name))}</div>
                 {side_stat_html('Model Probability', fmt_pct(metrics['model_probability']))}
                 {side_stat_html('Decimal Odds', f"{metrics['decimal_odds']:.2f}")}
                 {side_stat_html('No-Vig Market Prob', fmt_pct(metrics['no_vig_implied_probability']))}
                 {side_stat_html('Edge', fmt_pct(metrics['probability_edge']))}
                 {side_stat_html('Expected Value', fmt_pct(metrics['expected_value_per_unit']))}
                 {side_stat_html(f'Expected Profit ({stake:g})', f"{metrics['expected_profit']:+.2f}")}
+                <div class="prob-stack">
+                    {probability_bar_html('Model', metrics['model_probability'], 'model')}
+                    {probability_bar_html('No-vig market', metrics['no_vig_implied_probability'], 'market')}
+                </div>
             </div>
             """
         )
@@ -1106,7 +1548,10 @@ def render_betting_value_sides(value, stake):
 
 def render_match_list(rows, empty_message):
     if rows.empty:
-        st.info(empty_message)
+        st.markdown(
+            empty_state_html("No matches", empty_message),
+            unsafe_allow_html=True,
+        )
         return
 
     for _, row in rows.iterrows():
@@ -1445,40 +1890,78 @@ def render_match_context_panel(fixture, referee, lineups_available):
         if lineups_available
         else badge("LINEUPS NOT RELEASED", "warn")
     )
+
+    home_team = str(fixture.get("home_team") or "Unknown")
+    away_team = str(fixture.get("away_team") or "Unknown")
+    league_name = str(fixture.get("league") or "Unknown")
+    status_text = str(fixture.get("status") or "Unknown")
+    kickoff_text = str(fixture.get("date") or "Unknown")
+    country_text = str(fixture.get("country") or "Unknown")
+    referee_text = str(referee or "Not assigned or not yet available")
+    lineups_text = "Confirmed" if lineups_available else "Not released yet"
+
+    home_logo = resolve_logo_url(
+        fixture.get("home_team_logo"),
+        fixture.get("home_team_id"),
+        "teams",
+    )
+    away_logo = resolve_logo_url(
+        fixture.get("away_team_logo"),
+        fixture.get("away_team_id"),
+        "teams",
+    )
+    league_logo = resolve_logo_url(
+        fixture.get("league_logo"),
+        fixture.get("league_id"),
+        "leagues",
+    )
+    competition_badge = club_badge_html(league_name, league_logo, size="sm")
+
     st.markdown(
         f"""
-        <div class="panel panel-accent">
-            <div class="small-label">Selected fixture</div>
-            <div class="match-card-title" style="margin-bottom: 8px;">
-                {fixture.get("home_team", "Unknown")} vs {fixture.get("away_team", "Unknown")}
+        <div class="match-hero">
+            <div class="match-hero-competition">
+                {competition_badge}
+                <span>{html_escape(league_name)}</span>
             </div>
-            <div>{referee_badge} {lineup_badge}</div>
-            <div class="context-meta-grid">
+            <div class="match-hero-grid">
+                <div class="match-hero-team">
+                    {club_badge_html(home_team, home_logo)}
+                    <div class="match-hero-team-name">{html_escape(home_team)}</div>
+                </div>
+                <div class="match-hero-vs">
+                    <div class="match-hero-vs-mark">VS</div>
+                    <div>{referee_badge} {lineup_badge}</div>
+                </div>
+                <div class="match-hero-team away">
+                    {club_badge_html(away_team, away_logo)}
+                    <div class="match-hero-team-name">{html_escape(away_team)}</div>
+                </div>
+            </div>
+            <div class="context-meta-grid" style="margin-top: 1rem;">
                 <div class="context-meta-item">
                     <div class="small-label">League</div>
-                    <div class="context-meta-value">{fixture.get("league") or "Unknown"}</div>
+                    <div class="context-meta-value">{html_escape(league_name)}</div>
                 </div>
                 <div class="context-meta-item">
                     <div class="small-label">Status</div>
-                    <div class="context-meta-value">{fixture.get("status") or "Unknown"}</div>
+                    <div class="context-meta-value">{html_escape(status_text)}</div>
                 </div>
                 <div class="context-meta-item">
                     <div class="small-label">Kickoff</div>
-                    <div class="context-meta-value">{fixture.get("date") or "Unknown"}</div>
+                    <div class="context-meta-value">{html_escape(kickoff_text)}</div>
                 </div>
                 <div class="context-meta-item">
                     <div class="small-label">Country</div>
-                    <div class="context-meta-value">{fixture.get("country") or "Unknown"}</div>
+                    <div class="context-meta-value">{html_escape(country_text)}</div>
                 </div>
                 <div class="context-meta-item">
                     <div class="small-label">Referee</div>
-                    <div class="context-meta-value">{referee or "Not assigned or not yet available"}</div>
+                    <div class="context-meta-value">{html_escape(referee_text)}</div>
                 </div>
                 <div class="context-meta-item">
                     <div class="small-label">Lineups</div>
-                    <div class="context-meta-value">
-                        {"Confirmed" if lineups_available else "Not released yet"}
-                    </div>
+                    <div class="context-meta-value">{html_escape(lineups_text)}</div>
                 </div>
             </div>
         </div>
@@ -1569,21 +2052,25 @@ def render_top_matched_risk_cards(matched_risks):
         score = row.get("RiskScore")
         score_text = "N/A" if pd.isna(score) else f"{float(score):.2f}"
         tier = row.get("RiskTier")
-        tier_text = "N/A" if pd.isna(tier) or str(tier).strip() == "" else str(tier)
-        source = row.get("ProfileSource") or "Unknown source"
+        source = str(row.get("ProfileSource") or "Unmatched / not fetched")
+        source_kind = "good" if row.get("ProfileMatched") else "bad"
+        source_label = f"SOURCE: {source}"
+        player = html_escape(str(row.get("Player", "Unknown")))
+        team = html_escape(str(row.get("Team", "Unknown")))
+        position = html_escape(str(row.get("Position", "N/A")))
         cards.append(
             f"""
             <div class="risk-player-card">
                 <div class="risk-player-rank">#{rank}</div>
-                <div class="risk-player-name">{row.get("Player", "Unknown")}</div>
+                <div class="risk-player-name">{player}</div>
                 <div class="risk-player-meta">
-                    {row.get("Team", "Unknown")} &middot; {row.get("Position", "N/A")}
+                    {team} &middot; {position}
                 </div>
                 <div class="small-label">Risk score</div>
                 <div class="risk-score-value">{score_text}</div>
                 <div style="margin-top: 8px;">
-                    {badge(tier_text, "warn" if tier_text != "N/A" else "neutral")}
-                    {badge(str(source), "good" if row.get("ProfileMatched") else "bad")}
+                    {risk_tier_pill(tier)}
+                    {badge(source_label, source_kind)}
                 </div>
             </div>
             """
@@ -1691,7 +2178,13 @@ def render_live_match_builder():
             return
 
     if not fixtures:
-        st.info("No fixtures were found for this date.")
+        st.markdown(
+            empty_state_html(
+                "No fixtures found",
+                "Try another date, or enable the test fixture to explore the live workflow.",
+            ),
+            unsafe_allow_html=True,
+        )
         return
 
     leagues = sorted(
@@ -1903,9 +2396,13 @@ def render_live_match_builder():
     )
 
     if not lineups_available or not lineup_rows:
-        st.info(
-            "Confirmed lineups are not available yet. "
-            "They are usually released shortly before kickoff."
+        st.markdown(
+            empty_state_html(
+                "Lineups not released yet",
+                "Confirmed lineups usually appear shortly before kickoff. "
+                "Match prediction and value analysis remain available above.",
+            ),
+            unsafe_allow_html=True,
         )
         return
 
@@ -1941,8 +2438,12 @@ def render_live_match_builder():
         "5 unmatched starters per action."
     )
     if not prediction or prediction.get("fixture_id") != fixture_id:
-        st.info(
-            "Generate the match prediction to score confirmed starters."
+        st.markdown(
+            empty_state_html(
+                "Prediction required",
+                "Generate the match prediction in Stage 3 to score confirmed starters.",
+            ),
+            unsafe_allow_html=True,
         )
         return
 
