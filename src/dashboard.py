@@ -26,6 +26,7 @@ from bet_tracker import (
     calculate_summary_for_tracking,
     evaluate_tracking,
     initialize_bet_tracking,
+    save_live_prediction,
     save_tracking_edits,
 )
 from player_risk import (
@@ -390,10 +391,10 @@ def render_bet_tracker():
     summary = calculate_summary()
     tracking = load_tracking_data()
 
-    st.subheader("Bet Tracker")
+    st.subheader("Prediction History")
 
     c1, c2, c3, c4, c5, c6, c7, c8 = st.columns(8)
-    c1.metric("Total Bets", summary["total_bets"])
+    c1.metric("Total Saved", summary["total_bets"])
     c2.metric("Wins", summary["wins"])
     c3.metric("Losses", summary["losses"])
     c4.metric("Pending", summary["pending"])
@@ -403,7 +404,7 @@ def render_bet_tracker():
     c8.metric("Avg Edge", fmt_pct(summary["avg_edge"]))
 
     if tracking.empty:
-        st.info("No bets logged yet. Run predictions to add top bets automatically.")
+        st.info("No predictions have been saved yet.")
         return
 
     st.caption(
@@ -413,7 +414,19 @@ def render_bet_tracker():
         tracking,
         use_container_width=True,
         num_rows="dynamic",
-        disabled=["Result", "Profit"],
+        disabled=[
+            "Result",
+            "Profit",
+            "FixtureID",
+            "League",
+            "Referee",
+            "PredictedCards",
+            "ModelProbability",
+            "MarketProbability",
+            "ExpectedValue",
+            "OddsSource",
+            "SavedAt",
+        ],
         column_order=TRACKING_COLUMNS,
         column_config={
             "Date": st.column_config.DateColumn("Date"),
@@ -426,8 +439,23 @@ def render_bet_tracker():
             "Stake": st.column_config.NumberColumn("Stake", step=0.25),
             "Edge": st.column_config.NumberColumn("Edge", format="%.3f"),
             "Confidence": st.column_config.TextColumn("Confidence"),
-            "FinalCards": st.column_config.NumberColumn("Final Cards", step=1),
+            "FinalCards": st.column_config.NumberColumn(
+                "Final Cards", min_value=0, step=1
+            ),
             "Profit": st.column_config.NumberColumn("Profit", format="%.2f"),
+            "PredictedCards": st.column_config.NumberColumn(
+                "Predicted Cards", format="%.2f"
+            ),
+            "ModelProbability": st.column_config.NumberColumn(
+                "Model Probability", format="percent"
+            ),
+            "MarketProbability": st.column_config.NumberColumn(
+                "Market Probability", format="percent"
+            ),
+            "ExpectedValue": st.column_config.NumberColumn(
+                "Expected Value", format="percent"
+            ),
+            "OddsSource": st.column_config.TextColumn("Odds Source"),
         },
         key="bet_tracking_editor",
     )
@@ -812,6 +840,27 @@ def render_live_match_builder():
                 recommendation = value["recommendation"]
                 if recommendation:
                     st.success(f"Recommendation: {recommendation}")
+                    if st.button(
+                        "Save to Prediction History",
+                        key=f"save_live_prediction_{fixture_id}",
+                    ):
+                        try:
+                            save_result = save_live_prediction(
+                                fixture,
+                                prediction,
+                                value,
+                                stake,
+                            )
+                        except ValueError as error:
+                            st.error(str(error))
+                        else:
+                            if save_result["saved"]:
+                                st.success("Prediction saved to history.")
+                            else:
+                                st.info(
+                                    "This fixture, pick, and line already exist "
+                                    "in Prediction History."
+                                )
                 else:
                     st.info("No positive EV")
 
@@ -1013,7 +1062,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
         "With Ref Data",
         "Without Ref Data",
         "All Predictions",
-        "Bet Tracker",
+        "Prediction History",
         "Player Card Risk",
         "Live Match Builder",
     ]

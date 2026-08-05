@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -17,6 +18,15 @@ TRACKING_COLUMNS = [
     "FinalCards",
     "Result",
     "Profit",
+    "FixtureID",
+    "League",
+    "Referee",
+    "PredictedCards",
+    "ModelProbability",
+    "MarketProbability",
+    "ExpectedValue",
+    "OddsSource",
+    "SavedAt",
 ]
 
 
@@ -73,6 +83,109 @@ def _date_key(value) -> str:
     return parsed.strftime("%Y-%m-%d")
 
 
+def _has_fixture_id(value) -> bool:
+    """Return whether a persisted fixture ID is usable for deduplication."""
+    return pd.notna(value) and str(value).strip() not in {"", "<NA>", "nan"}
+
+
+def _fixture_id_key(value) -> str:
+    """Normalize IDs read back from CSV, including integer-looking floats."""
+    if not _has_fixture_id(value):
+        return ""
+    numeric = pd.to_numeric(value, errors="coerce")
+    if pd.notna(numeric) and float(numeric).is_integer():
+        return str(int(numeric))
+    return str(value).strip()
+
+
+def save_live_prediction(
+    fixture: dict,
+    prediction: dict,
+    betting_value: dict,
+    stake: float,
+) -> dict:
+    """Save one explicitly selected positive-EV live prediction to Bet Tracker."""
+    recommendation = betting_value.get("recommendation")
+    sides = betting_value.get("sides", {})
+    if not recommendation or recommendation not in sides:
+        raise ValueError("A positive-EV recommendation is required before saving.")
+
+    side = sides[recommendation]
+    if side.get("expected_value_per_unit", 0) <= 0:
+        raise ValueError("A positive-EV recommendation is required before saving.")
+    stake = pd.to_numeric(stake, errors="coerce")
+    if pd.isna(stake) or stake < 0:
+        raise ValueError("Stake must be a non-negative number.")
+    fixture_id = fixture.get("fixture_id") or prediction.get("fixture_id")
+    line = 4.5
+    pick = recommendation.upper()
+    odds_source = str(betting_value.get("odds_source", "")).strip()
+    is_test = (
+        odds_source.casefold() == "manual test odds"
+        or (isinstance(fixture_id, (int, float)) and fixture_id < 0)
+    )
+    source_label = f"TEST - {odds_source}" if is_test else odds_source
+    league = fixture.get("league", prediction.get("league"))
+    if is_test:
+        league = f"TEST - {league or 'fixture'}"
+
+    row = {
+        "Date": fixture.get("date"),
+        "HomeTeam": fixture.get("home_team") or prediction.get("home_team_api"),
+        "AwayTeam": fixture.get("away_team") or prediction.get("away_team_api"),
+        "Pick": pick,
+        "Line": line,
+        "Odds": side["decimal_odds"],
+        "Stake": stake,
+        "Edge": side["probability_edge"],
+        "Confidence": prediction.get("confidence"),
+        "FinalCards": float("nan"),
+        "Result": "PENDING",
+        "Profit": 0.0,
+        "FixtureID": fixture_id,
+        "League": league,
+        "Referee": fixture.get("referee") or prediction.get("referee_model"),
+        "PredictedCards": prediction.get("predicted_cards"),
+        "ModelProbability": side["model_probability"],
+        "MarketProbability": side["no_vig_implied_probability"],
+        "ExpectedValue": side["expected_value_per_unit"],
+        "OddsSource": source_label,
+        "SavedAt": datetime.now(timezone.utc).isoformat(),
+    }
+    new_row = pd.Series(row)
+    new_row["Pick"] = _normalize_pick_label(new_row)
+
+    tracking = initialize_bet_tracking()
+    if _has_fixture_id(fixture_id):
+        duplicate = (
+            tracking["FixtureID"].apply(
+                lambda value: _has_fixture_id(value)
+                and _fixture_id_key(value) == _fixture_id_key(fixture_id)
+            )
+            & (tracking["Pick"] == new_row["Pick"])
+            & (pd.to_numeric(tracking["Line"], errors="coerce") == line)
+        )
+    else:
+        duplicate = (
+            (tracking["FixtureID"].apply(lambda value: not _has_fixture_id(value)))
+            & (tracking["Date"].apply(_date_key) == _date_key(new_row["Date"]))
+            & (tracking["HomeTeam"] == new_row["HomeTeam"])
+            & (tracking["AwayTeam"] == new_row["AwayTeam"])
+            & (tracking["Pick"] == new_row["Pick"])
+        )
+
+    if duplicate.any():
+        return {"saved": False, "duplicate": True, "tracking": tracking}
+
+    combined = pd.concat(
+        [tracking, pd.DataFrame([new_row], columns=TRACKING_COLUMNS)],
+        ignore_index=True,
+    )
+    combined = evaluate_tracking(combined)
+    combined.to_csv(TRACKING_PATH, index=False)
+    return {"saved": True, "duplicate": False, "tracking": combined}
+
+
 def _profit_for_result(result, odds, stake) -> float:
     result = str(result).strip().upper()
     odds = pd.to_numeric(odds, errors="coerce")
@@ -91,8 +204,8 @@ def _profit_for_result(result, odds, stake) -> float:
 
 def _result_from_final_cards(row: pd.Series) -> str:
     final_cards = pd.to_numeric(row.get("FinalCards"), errors="coerce")
-    if pd.isna(final_cards):
-        return str(row.get("Result", "PENDING")).strip().upper() or "PENDING"
+    if pd.isna(final_cards) or final_cards < 0:
+        return "PENDING"
 
     line = pd.to_numeric(row.get("Line"), errors="coerce")
     if pd.isna(line):
@@ -157,7 +270,8 @@ def log_top_bets(top_bets: pd.DataFrame) -> pd.DataFrame:
     rows_to_append = []
     for _, new_bet in new_bets.iterrows():
         duplicate = (
-            (tracking["_dedupe_date"] == new_bet["_dedupe_date"])
+            tracking["FixtureID"].apply(lambda value: not _has_fixture_id(value))
+            & (tracking["_dedupe_date"] == new_bet["_dedupe_date"])
             & (tracking["HomeTeam"] == new_bet["HomeTeam"])
             & (tracking["AwayTeam"] == new_bet["AwayTeam"])
             & (tracking["Pick"] == new_bet["Pick"])
@@ -175,14 +289,6 @@ def log_top_bets(top_bets: pd.DataFrame) -> pd.DataFrame:
     combined = pd.concat(
         [tracking.drop(columns=["_dedupe_date"]), append_frame], ignore_index=True
     )
-    combined["_dedupe_date"] = pd.to_datetime(
-        combined["Date"], dayfirst=True, errors="coerce"
-    ).dt.strftime("%Y-%m-%d")
-    combined = combined.drop_duplicates(
-        subset=["_dedupe_date", "HomeTeam", "AwayTeam", "Pick"],
-        keep="first",
-    )
-    combined = combined.drop(columns=["_dedupe_date"])
     combined = combined[TRACKING_COLUMNS]
     combined.to_csv(TRACKING_PATH, index=False)
     return combined
@@ -201,6 +307,7 @@ def evaluate_tracking(tracking: pd.DataFrame) -> pd.DataFrame:
     tracking["Odds"] = pd.to_numeric(tracking["Odds"], errors="coerce").fillna(0.0)
     tracking["Line"] = pd.to_numeric(tracking["Line"], errors="coerce").fillna(4.5)
     tracking["FinalCards"] = pd.to_numeric(tracking["FinalCards"], errors="coerce")
+    tracking.loc[tracking["FinalCards"] < 0, "FinalCards"] = float("nan")
     tracking["Edge"] = pd.to_numeric(tracking["Edge"], errors="coerce")
     tracking["Confidence"] = tracking["Confidence"].fillna("UNKNOWN")
     tracking["Result"] = tracking.apply(_result_from_final_cards, axis=1)
