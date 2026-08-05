@@ -591,17 +591,18 @@ st.markdown(
         position: relative;
         width: 64px;
         height: 64px;
-        border-radius: 16px;
-        overflow: hidden;
-        border: 1px solid var(--yc-border);
-        background: rgba(2, 6, 23, 0.75);
+        border-radius: 0;
+        overflow: visible;
+        border: none;
+        background: transparent;
+        box-shadow: none;
         flex-shrink: 0;
     }
 
     .club-badge.sm {
         width: 28px;
         height: 28px;
-        border-radius: 8px;
+        border-radius: 0;
     }
 
     .club-badge-fallback {
@@ -615,10 +616,12 @@ st.markdown(
         color: var(--yc-accent);
         background: linear-gradient(160deg, rgba(56, 189, 248, 0.16), rgba(15, 23, 42, 0.9));
         font-size: 1rem;
+        border-radius: 16px;
     }
 
     .club-badge.sm .club-badge-fallback {
         font-size: 0.65rem;
+        border-radius: 8px;
     }
 
     .club-badge img {
@@ -627,8 +630,18 @@ st.markdown(
         width: 100%;
         height: 100%;
         object-fit: contain;
-        padding: 6px;
-        background: rgba(248, 250, 252, 0.92);
+        object-position: center;
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        z-index: 1;
+    }
+
+    .club-badge:has(img:not([style*="display: none"])) .club-badge-fallback {
+        visibility: hidden;
     }
 
     .match-card-vs-row {
